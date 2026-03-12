@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+from exercises.base import Exercise
 
 app = Flask(__name__)
 
@@ -12,6 +13,8 @@ EXERCISE_TYPES = {
     "estimation": {"name": "Stima Flash", "icon": "⚡", "desc": "Stima ordini di grandezza"},
     "solve": {"name": "Calcola e Risolvi", "icon": "🧮", "desc": "Risolvi equazioni e espressioni"},
     "statistics": {"name": "Statistica", "icon": "📊", "desc": "Media, mediana, varianza e altro"},
+    "analytic_geo": {"name": "Geometria Analitica", "icon": "📏", "desc": "Rette, distanze e circonferenze nel piano"},
+    "inequalities": {"name": "Disequazioni", "icon": "⚖️", "desc": "Disequazioni di 1° e 2° grado, razionali"},
 }
 
 exercise_registry = {}
@@ -47,6 +50,12 @@ register_exercise("solve", SolveExercise)
 
 from exercises.statistics_exercise import StatisticsExercise
 register_exercise("statistics", StatisticsExercise)
+
+from exercises.analytic_geometry import AnalyticGeometry
+register_exercise("analytic_geo", AnalyticGeometry)
+
+from exercises.inequalities import InequalitiesExercise
+register_exercise("inequalities", InequalitiesExercise)
 
 
 @app.route("/")
@@ -119,6 +128,53 @@ def api_simulation_exercises():
         data = ex.generate(difficulty)
         data["type"] = ex_type
         data["difficulty"] = difficulty
+        exercises.append(data)
+    return jsonify(exercises)
+
+
+@app.route("/realistic-exam")
+def realistic_exam():
+    return render_template("realistic_exam.html", exercise_types=EXERCISE_TYPES)
+
+
+@app.route("/api/realistic-exam/exercises")
+def api_realistic_exam_exercises():
+    """Generate 20 text-only exercises for realistic TOLC-B exam format."""
+    import random as _random
+    # Use types that work well in text-only format (no graph type)
+    text_types = [
+        "trap", "trap",
+        "word", "word",
+        "logic", "logic",
+        "solve", "solve", "solve",
+        "statistics", "statistics",
+        "analytic_geo", "analytic_geo",
+        "inequalities", "inequalities",
+        "probability", "probability",
+        "geometry", "geometry",
+        "estimation",
+    ]
+    _random.shuffle(text_types)
+    exercises = []
+    for ex_type in text_types:
+        difficulty = _random.choice([1, 2, 2, 2, 3])
+        ex = exercise_registry[ex_type]()
+        data = ex.generate(difficulty)
+        data["type"] = ex_type
+        data["difficulty"] = difficulty
+        # Remove graphical data for text-only format
+        data.pop("graph_data", None)
+        # Ensure exactly 5 options
+        if len(data.get("options", [])) < 5:
+            while len(data["options"]) < 5:
+                data["options"].append("Nessuna delle precedenti")
+        elif len(data.get("options", [])) > 5:
+            # Keep correct + first 4 wrong
+            correct = data["options"][data["correct_index"]]
+            others = [o for i, o in enumerate(data["options"]) if i != data["correct_index"]][:4]
+            data["options"] = [correct] + others
+            data["correct_index"] = 0
+            data["options"], data["correct_index"] = Exercise.shuffle_options(data["options"], 0)
         exercises.append(data)
     return jsonify(exercises)
 

@@ -76,6 +76,81 @@ def _make_distractors(correct_value, count=4):
     return list(distractors)[:count]
 
 
+def _prime_factorization(n):
+    """Return prime factorization as dict {prime: exponent} and formatted string.
+
+    Example: _prime_factorization(12) -> ({2: 2, 3: 1}, "2² × 3")
+    """
+    if n <= 1:
+        return {n: 1}, str(n)
+    factors = {}
+    d = 2
+    temp = n
+    while d * d <= temp:
+        while temp % d == 0:
+            factors[d] = factors.get(d, 0) + 1
+            temp //= d
+        d += 1
+    if temp > 1:
+        factors[temp] = factors.get(temp, 0) + 1
+
+    superscript_map = {
+        0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴",
+        5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹",
+    }
+
+    def _sup(exp):
+        if exp == 1:
+            return ""
+        return "".join(superscript_map[int(c)] for c in str(exp))
+
+    parts = [f"{p}{_sup(e)}" for p, e in sorted(factors.items())]
+    formatted = " × ".join(parts)
+    return factors, formatted
+
+
+def _factorization_gcd(factors_a, factors_b):
+    """Compute GCD factors from two factorization dicts."""
+    common = {}
+    for p in set(factors_a) & set(factors_b):
+        common[p] = min(factors_a[p], factors_b[p])
+    return common
+
+
+def _factorization_lcm(factors_a, factors_b):
+    """Compute LCM factors from two factorization dicts."""
+    result = dict(factors_a)
+    for p, e in factors_b.items():
+        result[p] = max(result.get(p, 0), e)
+    return result
+
+
+def _format_factors(factors):
+    """Format a factor dict as a string like '2² × 3'."""
+    if not factors:
+        return "1"
+    superscript_map = {
+        0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴",
+        5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹",
+    }
+
+    def _sup(exp):
+        if exp == 1:
+            return ""
+        return "".join(superscript_map[int(c)] for c in str(exp))
+
+    parts = [f"{p}{_sup(e)}" for p, e in sorted(factors.items())]
+    return " × ".join(parts)
+
+
+def _factors_product(factors):
+    """Compute the numeric value from a factor dict."""
+    result = 1
+    for p, e in factors.items():
+        result *= p ** e
+    return result
+
+
 def _make_fraction_distractors(correct_num, correct_den, count=4):
     """Generate plausible wrong fraction answers."""
     correct_str = _fmt_fraction(correct_num, correct_den)
@@ -275,6 +350,70 @@ def _t1_simple_expression():
         f"Poi: {a} + {b * c} - {d} = {_fmt(result)}."
     )
     tip = "Ricorda l'ordine delle operazioni: prima potenze e radici, poi moltiplicazioni e divisioni, infine addizioni e sottrazioni."
+    return question, result, explanation, tip
+
+
+def _t1_gcd_two_simple():
+    """GCD of two small numbers with step-by-step prime factorization."""
+    # Build from a common factor to guarantee non-trivial GCD
+    common = random.choice([2, 3, 4, 5, 6])
+    mult_a = random.randint(2, 6)
+    mult_b = random.randint(2, 6)
+    while mult_a == mult_b:
+        mult_b = random.randint(2, 6)
+    a = common * mult_a
+    b = common * mult_b
+
+    result = float(math.gcd(a, b))
+    factors_a, fmt_a = _prime_factorization(a)
+    factors_b, fmt_b = _prime_factorization(b)
+    gcd_factors = _factorization_gcd(factors_a, factors_b)
+    gcd_fmt = _format_factors(gcd_factors)
+
+    question = (
+        f"Calcola il MCD (Massimo Comun Divisore) di {a} e {b} "
+        f"usando la scomposizione in fattori primi."
+    )
+    explanation = (
+        f"Scomposizione in fattori primi:\n"
+        f"{a} = {fmt_a}\n"
+        f"{b} = {fmt_b}\n"
+        f"MCD = prodotto dei fattori comuni con esponente minimo = {gcd_fmt} = {_fmt(result)}."
+    )
+    tip = (
+        "Per trovare il MCD, scomponi i numeri in fattori primi e "
+        "prendi i fattori comuni con l'esponente piu' piccolo."
+    )
+    return question, result, explanation, tip
+
+
+def _t1_lcm_two_simple():
+    """LCM of two small numbers with prime factorization explanation."""
+    a = random.randint(4, 28)
+    b = random.randint(4, 28)
+    while a == b:
+        b = random.randint(4, 28)
+
+    result = float(math.lcm(a, b))
+    factors_a, fmt_a = _prime_factorization(a)
+    factors_b, fmt_b = _prime_factorization(b)
+    lcm_factors = _factorization_lcm(factors_a, factors_b)
+    lcm_fmt = _format_factors(lcm_factors)
+
+    question = (
+        f"Calcola il mcm (minimo comune multiplo) di {a} e {b} "
+        f"usando la scomposizione in fattori primi."
+    )
+    explanation = (
+        f"Scomposizione in fattori primi:\n"
+        f"{a} = {fmt_a}\n"
+        f"{b} = {fmt_b}\n"
+        f"mcm = prodotto di tutti i fattori con esponente massimo = {lcm_fmt} = {_fmt(result)}."
+    )
+    tip = (
+        "Per trovare il mcm, scomponi i numeri in fattori primi e "
+        "prendi tutti i fattori con l'esponente piu' grande."
+    )
     return question, result, explanation, tip
 
 
@@ -486,6 +625,127 @@ def _t2_gcd_lcm():
 
     tip = "MCD e mcm sono legati dalla relazione: MCD(a,b) * mcm(a,b) = a * b."
     return question, result, explanation, tip
+
+
+def _t2_lcm_periodicity():
+    """Applied LCM problem: two periodic events coinciding."""
+    contexts = [
+        (
+            "Un autobus passa ogni {a} minuti e un altro ogni {b} minuti. "
+            "Se partono insieme adesso, tra quanti minuti passeranno di nuovo insieme?",
+            "minuti",
+        ),
+        (
+            "Una campana suona ogni {a} minuti e un'altra ogni {b} minuti. "
+            "Se suonano insieme adesso, tra quanti minuti suoneranno di nuovo insieme?",
+            "minuti",
+        ),
+        (
+            "Anna innaffia le piante ogni {a} giorni e Marco ogni {b} giorni. "
+            "Se oggi innaffiano entrambi, tra quanti giorni innaffieranno di nuovo lo stesso giorno?",
+            "giorni",
+        ),
+        (
+            "Un semaforo diventa verde ogni {a} secondi e un altro ogni {b} secondi. "
+            "Se diventano verdi insieme adesso, tra quanti secondi lo saranno di nuovo?",
+            "secondi",
+        ),
+    ]
+    a = random.choice([2, 3, 4, 5, 6, 8, 10, 12, 15])
+    b = random.choice([3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15])
+    while a == b or (math.gcd(a, b) == 1 and a * b > 100):
+        b = random.choice([3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15])
+
+    result = float(math.lcm(a, b))
+    context_template, unit = random.choice(contexts)
+    question = context_template.format(a=a, b=b)
+
+    explanation = (
+        f"Dobbiamo trovare il minimo comune multiplo di {a} e {b}.\n"
+        f"mcm({a}, {b}) = {_fmt(result)} {unit}.\n"
+        f"Verifica: {_fmt(result)} / {a} = {_fmt(result / a)}, "
+        f"{_fmt(result)} / {b} = {_fmt(result / b)} (entrambi interi)."
+    )
+    tip = (
+        "Quando due eventi periodici devono coincidere, "
+        "il tempo di attesa e' il mcm dei loro periodi."
+    )
+    return question, result, explanation, tip
+
+
+def _t2_gcd_equal_groups():
+    """Applied GCD problem: dividing items into equal groups."""
+    # Pick a GCD first, then derive a and b
+    gcd_val = random.choice([2, 3, 4, 5, 6, 7, 8])
+    mult_a = random.randint(2, 8)
+    mult_b = random.randint(2, 8)
+    while mult_a == mult_b or math.gcd(mult_a, mult_b) != 1:
+        mult_b = random.randint(2, 8)
+    a = gcd_val * mult_a
+    b = gcd_val * mult_b
+
+    result = float(gcd_val)
+
+    contexts = [
+        (
+            f"Hai {a} palline rosse e {b} palline blu. "
+            f"Qual e' il numero massimo di gruppi identici che puoi formare usando tutte le palline?",
+            f"Ogni gruppo conterra' {mult_a} palline rosse e {mult_b} palline blu.",
+        ),
+        (
+            f"Un pasticcere ha {a} biscotti al cioccolato e {b} biscotti alla vaniglia. "
+            f"Qual e' il numero massimo di sacchetti identici che puo' preparare usando tutti i biscotti?",
+            f"Ogni sacchetto conterra' {mult_a} biscotti al cioccolato e {mult_b} alla vaniglia.",
+        ),
+        (
+            f"In una scuola ci sono {a} quaderni di matematica e {b} quaderni di italiano. "
+            f"Qual e' il numero massimo di kit identici che si possono preparare usando tutti i quaderni?",
+            f"Ogni kit conterra' {mult_a} quaderni di matematica e {mult_b} di italiano.",
+        ),
+    ]
+    question_text, extra_info = random.choice(contexts)
+
+    explanation = (
+        f"Dobbiamo trovare il MCD di {a} e {b}.\n"
+        f"MCD({a}, {b}) = {_fmt(result)}.\n"
+        f"{extra_info}"
+    )
+    tip = (
+        "Per dividere oggetti in gruppi uguali il piu' possibile, "
+        "il numero di gruppi e' dato dal MCD delle quantita'."
+    )
+    return question_text, result, explanation, tip
+
+
+def _t2_fraction_simplification():
+    """Simplify a fraction to lowest terms using GCD."""
+    # Generate a fraction that needs simplification
+    gcd_val = random.choice([2, 3, 4, 5, 6, 7, 8, 9, 10])
+    simp_num = random.randint(1, 12)
+    simp_den = random.randint(2, 12)
+    while simp_num == simp_den or math.gcd(simp_num, simp_den) != 1:
+        simp_den = random.randint(2, 12)
+
+    orig_num = simp_num * gcd_val
+    orig_den = simp_den * gcd_val
+
+    correct_str = _fmt_fraction(simp_num, simp_den)
+    distractors = _make_fraction_distractors(simp_num, simp_den)
+
+    question = (
+        f"Riduci ai minimi termini la frazione {orig_num}/{orig_den}."
+    )
+    explanation = (
+        f"Troviamo il MCD di {orig_num} e {orig_den}:\n"
+        f"MCD({orig_num}, {orig_den}) = {gcd_val}.\n"
+        f"Dividiamo numeratore e denominatore per {gcd_val}:\n"
+        f"{orig_num}/{orig_den} = {simp_num}/{simp_den} = {correct_str}."
+    )
+    tip = (
+        "Per ridurre una frazione ai minimi termini, dividi numeratore e "
+        "denominatore per il loro MCD."
+    )
+    return question, correct_str, distractors, explanation, tip
 
 
 # ---------------------------------------------------------------------------
@@ -750,6 +1010,95 @@ def _t3_compound_fraction():
     return question, result, explanation, tip
 
 
+def _t3_gcd_three_numbers():
+    """GCD of three numbers with prime factorization."""
+    # Pick a common GCD factor, then build three numbers with coprime multipliers
+    gcd_val = random.choice([2, 3, 4, 5, 6])
+    # Pre-select three distinct multipliers whose GCD is 1
+    coprime_triples = [
+        (2, 3, 5), (2, 3, 7), (2, 5, 7), (2, 5, 9), (3, 4, 5),
+        (3, 5, 7), (3, 7, 8), (4, 5, 7), (4, 5, 9), (4, 7, 9),
+        (3, 4, 7), (5, 6, 7), (5, 7, 9), (2, 7, 9), (3, 5, 8),
+    ]
+    mult_a, mult_b, mult_c = random.choice(coprime_triples)
+
+    a = gcd_val * mult_a
+    b = gcd_val * mult_b
+    c = gcd_val * mult_c
+
+    result = float(math.gcd(a, math.gcd(b, c)))
+
+    factors_a, fmt_a = _prime_factorization(a)
+    factors_b, fmt_b = _prime_factorization(b)
+    factors_c, fmt_c = _prime_factorization(c)
+
+    question = (
+        f"Calcola il MCD (Massimo Comun Divisore) di {a}, {b} e {c}."
+    )
+    explanation = (
+        f"Scomposizione in fattori primi:\n"
+        f"{a} = {fmt_a}\n"
+        f"{b} = {fmt_b}\n"
+        f"{c} = {fmt_c}\n"
+        f"MCD = prodotto dei fattori comuni a tutti e tre con esponente minimo = {_fmt(result)}."
+    )
+    tip = (
+        "Il MCD di tre numeri si calcola prendendo i fattori primi comuni a tutti "
+        "con l'esponente piu' piccolo, oppure: MCD(a, b, c) = MCD(MCD(a, b), c)."
+    )
+    return question, result, explanation, tip
+
+
+def _t3_lcm_three_numbers():
+    """LCM of three numbers — applied traffic light problem."""
+    values = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20]
+    a = random.choice(values)
+    b = random.choice(values)
+    c = random.choice(values)
+    while a == b or a == c or b == c or math.lcm(a, b, c) > 300:
+        a = random.choice(values)
+        b = random.choice(values)
+        c = random.choice(values)
+
+    result = float(math.lcm(a, b, c))
+
+    factors_a, fmt_a = _prime_factorization(a)
+    factors_b, fmt_b = _prime_factorization(b)
+    factors_c, fmt_c = _prime_factorization(c)
+
+    contexts = [
+        (
+            f"Tre semafori cambiano colore ogni {a}, {b} e {c} secondi rispettivamente. "
+            f"Se diventano tutti verdi nello stesso momento, dopo quanti secondi saranno di nuovo tutti verdi insieme?",
+            "secondi",
+        ),
+        (
+            f"Tre campanelle suonano ogni {a}, {b} e {c} minuti rispettivamente. "
+            f"Se suonano insieme adesso, dopo quanti minuti suoneranno di nuovo tutte insieme?",
+            "minuti",
+        ),
+        (
+            f"Tre autobus partono dalla stessa fermata ogni {a}, {b} e {c} minuti. "
+            f"Se partono insieme adesso, dopo quanti minuti partiranno di nuovo insieme?",
+            "minuti",
+        ),
+    ]
+    question_text, unit = random.choice(contexts)
+
+    explanation = (
+        f"Scomposizione in fattori primi:\n"
+        f"{a} = {fmt_a}\n"
+        f"{b} = {fmt_b}\n"
+        f"{c} = {fmt_c}\n"
+        f"mcm = prodotto di tutti i fattori con esponente massimo = {_fmt(result)} {unit}."
+    )
+    tip = (
+        "Il mcm di tre numeri si calcola prendendo tutti i fattori primi presenti "
+        "con l'esponente piu' grande, oppure: mcm(a, b, c) = mcm(mcm(a, b), c)."
+    )
+    return question_text, result, explanation, tip
+
+
 # ---------------------------------------------------------------------------
 # Template registries
 # ---------------------------------------------------------------------------
@@ -762,6 +1111,8 @@ _NUMERIC_TEMPLATES_L1 = [
     _t1_percentage_calculation,
     _t1_absolute_value,
     _t1_simple_expression,
+    _t1_gcd_two_simple,
+    _t1_lcm_two_simple,
 ]
 
 _NUMERIC_TEMPLATES_L2 = [
@@ -771,6 +1122,8 @@ _NUMERIC_TEMPLATES_L2 = [
     _t2_logarithmic_expression,
     _t2_radical_simplification,
     _t2_gcd_lcm,
+    _t2_lcm_periodicity,
+    _t2_gcd_equal_groups,
 ]
 
 _NUMERIC_TEMPLATES_L3 = [
@@ -780,12 +1133,15 @@ _NUMERIC_TEMPLATES_L3 = [
     _t3_system_with_quadratic,
     _t3_function_evaluation,
     _t3_compound_fraction,
+    _t3_gcd_three_numbers,
+    _t3_lcm_three_numbers,
 ]
 
 # Templates that return (question, correct_str, distractors_list, explanation, tip)
 # i.e., 5-tuple templates (string answer with custom distractors)
 _STRING_TEMPLATES_L1 = [
     _t1_fraction_addition,
+    _t2_fraction_simplification,
 ]
 
 

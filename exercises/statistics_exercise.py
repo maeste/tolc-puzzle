@@ -226,8 +226,173 @@ def _t1_range():
     return question, float(data_range), explanation, tip
 
 
+def _t1_read_histogram():
+    """Lettura di un istogramma presentato come tabella di frequenze."""
+    categories_pool = [
+        ("Matematica", "Italiano", "Inglese", "Scienze", "Storia", "Arte"),
+        ("Calcio", "Pallavolo", "Tennis", "Nuoto", "Basket", "Atletica"),
+        ("Pizza", "Pasta", "Insalata", "Panino", "Sushi", "Hamburger"),
+        ("Bus", "Auto", "Bici", "Treno", "A piedi", "Monopattino"),
+    ]
+    cats = list(random.choice(categories_pool))
+    n_cats = random.randint(4, min(6, len(cats)))
+    cats = random.sample(cats, k=n_cats)
+    freqs = [random.randint(3, 30) for _ in cats]
+    total = sum(freqs)
+
+    table_str = ", ".join(f"{c}: {f}" for c, f in zip(cats, freqs))
+    question_type = random.choice(["max_freq", "total", "min_freq"])
+
+    if question_type == "max_freq":
+        max_f = max(freqs)
+        correct_cat = cats[freqs.index(max_f)]
+        question = (
+            f"In un'indagine si e' ottenuta la seguente tabella di frequenze: "
+            f"{table_str}. Quale categoria ha la frequenza maggiore?"
+        )
+        correct_value = float(max_f)
+        explanation = (
+            f"Osservando le frequenze: {table_str}.\n"
+            f"La categoria con frequenza maggiore e' '{correct_cat}' con {max_f} osservazioni."
+        )
+        tip = "Per leggere un istogramma, confronta le altezze delle barre: la barra piu' alta corrisponde alla frequenza maggiore."
+    elif question_type == "total":
+        question = (
+            f"In un'indagine si e' ottenuta la seguente tabella di frequenze: "
+            f"{table_str}. Quante osservazioni ci sono in totale?"
+        )
+        correct_value = float(total)
+        explanation = (
+            f"Il totale si ottiene sommando tutte le frequenze:\n"
+            f"{' + '.join(str(f) for f in freqs)} = {total}"
+        )
+        tip = "Il totale delle osservazioni e' la somma di tutte le frequenze assolute."
+    else:
+        min_f = min(freqs)
+        correct_cat = cats[freqs.index(min_f)]
+        question = (
+            f"In un'indagine si e' ottenuta la seguente tabella di frequenze: "
+            f"{table_str}. Quale categoria ha la frequenza minore?"
+        )
+        correct_value = float(min_f)
+        explanation = (
+            f"Osservando le frequenze: {table_str}.\n"
+            f"La categoria con frequenza minore e' '{correct_cat}' con {min_f} osservazioni."
+        )
+        tip = "Per individuare la categoria meno frequente, cerca il valore piu' basso nella tabella."
+
+    return question, correct_value, explanation, tip
+
+
+def _t1_read_pie_chart():
+    """Lettura di un grafico a torta presentato come percentuali."""
+    scenarios = [
+        {
+            "intro": "In un sondaggio sugli hobby preferiti",
+            "cats": {"Sport": None, "Musica": None, "Cinema": None, "Lettura": None, "Altro": None},
+        },
+        {
+            "intro": "In un'indagine sulle bevande preferite",
+            "cats": {"Acqua": None, "Succo": None, "Te'": None, "Caffe'": None, "Altro": None},
+        },
+        {
+            "intro": "In un sondaggio sul mezzo di trasporto preferito",
+            "cats": {"Auto": None, "Bus": None, "Bici": None, "Treno": None, "Altro": None},
+        },
+    ]
+    scenario = random.choice(scenarios)
+    cat_names = list(scenario["cats"].keys())
+
+    # Generate percentages that sum to 100
+    raw = [random.randint(5, 40) for _ in cat_names[:-1]]
+    remainder = 100 - sum(raw)
+    if remainder < 1:
+        raw[-1] -= (1 - remainder)
+        remainder = 1
+    raw.append(remainder)
+    random.shuffle(raw)
+    percentages = dict(zip(cat_names, raw))
+
+    pct_str = ", ".join(f"{c} {p}%" for c, p in percentages.items())
+    target_cat = random.choice(cat_names)
+    target_pct = percentages[target_cat]
+    n_total = random.choice([100, 200, 400, 500, 1000])
+    correct_value = n_total * target_pct / 100
+
+    question = (
+        f"{scenario['intro']}, i risultati sono: {pct_str}. "
+        f"Se gli intervistati sono {n_total}, quanti hanno scelto {target_cat}?"
+    )
+    explanation = (
+        f"La percentuale di {target_cat} e' {target_pct}%.\n"
+        f"Numero = {n_total} * {target_pct} / 100 = {_fmt(correct_value)}"
+    )
+    tip = "Per convertire una percentuale in un valore assoluto, moltiplica il totale per la percentuale e dividi per 100."
+    return question, correct_value, explanation, tip
+
+
+def _t1_read_bar_chart():
+    """Lettura di un grafico a barre presentato come tabella di confronto."""
+    contexts = [
+        ("vendite (in migliaia di euro)", ["Q1", "Q2", "Q3", "Q4"]),
+        ("numero di visitatori", ["Gennaio", "Febbraio", "Marzo", "Aprile"]),
+        ("punteggio medio", ["Squadra A", "Squadra B", "Squadra C", "Squadra D"]),
+        ("produzione (unita')", ["Stabilimento Nord", "Stabilimento Sud", "Stabilimento Est", "Stabilimento Ovest"]),
+    ]
+    desc, groups = random.choice(contexts)
+    values = [random.randint(10, 100) for _ in groups]
+    table_str = ", ".join(f"{g}: {v}" for g, v in zip(groups, values))
+
+    question_type = random.choice(["difference", "max_min_diff", "increase"])
+
+    if question_type == "difference" and len(groups) >= 2:
+        i, j = random.sample(range(len(groups)), 2)
+        diff = abs(values[i] - values[j])
+        question = (
+            f"I dati relativi a {desc} sono: {table_str}. "
+            f"Qual e' la differenza tra {groups[i]} e {groups[j]}?"
+        )
+        correct_value = float(diff)
+        explanation = (
+            f"{groups[i]} = {values[i]}, {groups[j]} = {values[j]}\n"
+            f"Differenza = |{values[i]} - {values[j]}| = {diff}"
+        )
+        tip = "Per calcolare la differenza tra due valori in un grafico a barre, sottrai il valore minore dal maggiore."
+    elif question_type == "max_min_diff":
+        diff = max(values) - min(values)
+        question = (
+            f"I dati relativi a {desc} sono: {table_str}. "
+            f"Qual e' la differenza tra il valore massimo e il valore minimo?"
+        )
+        correct_value = float(diff)
+        max_g = groups[values.index(max(values))]
+        min_g = groups[values.index(min(values))]
+        explanation = (
+            f"Valore massimo: {max_g} = {max(values)}\n"
+            f"Valore minimo: {min_g} = {min(values)}\n"
+            f"Differenza = {max(values)} - {min(values)} = {diff}"
+        )
+        tip = "La differenza tra massimo e minimo (range) indica l'ampiezza della variazione tra i gruppi."
+    else:
+        i = random.randint(0, len(groups) - 2)
+        j = i + 1
+        diff = values[j] - values[i]
+        correct_value = float(diff)
+        question = (
+            f"I dati relativi a {desc} sono: {table_str}. "
+            f"Di quanto e' cambiato il valore da {groups[i]} a {groups[j]}?"
+        )
+        explanation = (
+            f"{groups[i]} = {values[i]}, {groups[j]} = {values[j]}\n"
+            f"Variazione = {values[j]} - {values[i]} = {diff}"
+        )
+        tip = "Un valore positivo indica un aumento, un valore negativo indica una diminuzione."
+
+    return question, correct_value, explanation, tip
+
+
 # ---------------------------------------------------------------------------
-# LEVEL 2 templates: Intermediate statistics
+# LEVEL 2 templates: Intermediate statistics (interpretazione dati)
 # ---------------------------------------------------------------------------
 
 def _t2_media_ponderata():
@@ -544,17 +709,20 @@ class StatisticsExercise(Exercise):
         _t1_mediana_pari,
         _t1_moda,
         _t1_range,
+        _t1_read_histogram,
+        _t1_read_pie_chart,
+        _t1_read_bar_chart,
     ]
 
     TEMPLATES_L2 = [
         _t2_media_ponderata,
-        _t2_varianza,
-        _t2_deviazione_standard,
         _t2_frequenza_relativa,
         _t2_media_frequenza,
     ]
 
     TEMPLATES_L3 = [
+        _t2_varianza,
+        _t2_deviazione_standard,
         _t3_varianza_formula,
         _t3_coefficiente_variazione,
         _t3_quartili,
@@ -589,4 +757,5 @@ class StatisticsExercise(Exercise):
             "explanation": explanation,
             "did_you_know": tip,
             "difficulty": difficulty,
+            "approfondimento": difficulty == 3,
         }

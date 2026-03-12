@@ -8,6 +8,21 @@
     <div id="suggestion" class="suggestion"></div>
 </section>
 
+<section id="tolc-info-banner" class="info-banner">
+    <button class="info-banner-close" id="btn-close-banner" aria-label="Chiudi">&times;</button>
+    <div class="info-banner-content">
+        <h3>ℹ️ Cosa copre questo strumento</h3>
+        <p>Questo strumento copre la <strong>sezione Matematica</strong> del TOLC-B. Il TOLC-B include anche altre sezioni:</p>
+        <ul>
+            <li>🧬 Biologia</li>
+            <li>🧪 Chimica</li>
+            <li>⚛️ Fisica</li>
+            <li>📝 Comprensione del testo</li>
+        </ul>
+        <p>Per esercitarti su tutte le sezioni, visita le <a href="https://www.cisiaonline.it/area-tematica-tolc-biologia/home-tolc-b/" target="_blank" rel="noopener">risorse ufficiali CISIA</a>.</p>
+    </div>
+</section>
+
 <section class="exercises-grid">
     {% for key, ex in exercise_types.items() %}
     <a href="/exercise/{{ key }}" class="exercise-card" data-type="{{ key }}">
@@ -27,6 +42,9 @@
 <section class="simulation-cta">
     <a href="/simulation" class="btn btn-primary btn-large">
         🎯 Simulazione TOLC-B — 20 domande, 50 minuti
+    </a>
+    <a href="/realistic-exam" class="btn btn-secondary btn-large">
+        📋 Esame Realistico — Formato diretto TOLC-B
     </a>
 </section>
 
@@ -53,5 +71,18 @@
         "{{ key }}": { "name": "{{ ex.name }}", "icon": "{{ ex.icon }}", "desc": "{{ ex.desc }}" }{% if not loop.last %},{% endif %}
         {% endfor %}
     };
+
+    // Info banner dismiss with localStorage persistence
+    (function() {
+        const banner = document.getElementById("tolc-info-banner");
+        const btnClose = document.getElementById("btn-close-banner");
+        if (localStorage.getItem("tolc_banner_dismissed") === "true") {
+            banner?.classList.add("hidden");
+        }
+        btnClose?.addEventListener("click", () => {
+            banner?.classList.add("hidden");
+            localStorage.setItem("tolc_banner_dismissed", "true");
+        });
+    })();
 </script>
 {% endblock %}

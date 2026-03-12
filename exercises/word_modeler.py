@@ -202,6 +202,88 @@ class WordModeler(Exercise):
         tip = "Numeri consecutivi: x, x+1, x+2, ... Non confondere con multipli consecutivi: x, 2x, 3x."
         return question, correct, [d1, d2, d3, d4], explanation, tip
 
+    @staticmethod
+    def _supermarket_shopping():
+        name = _pick_name()
+        n_packs = random.randint(2, 8)
+        price_pasta = random.choice([1, 2, 3])
+        price_oil = random.choice([5, 6, 7, 8, 9])
+        total = n_packs * price_pasta + price_oil
+        question = (
+            f"{name} compra {n_packs} confezioni di pasta a x euro ciascuna "
+            f"e una bottiglia d'olio a {price_oil} euro. "
+            f"Spende in tutto {total} euro. "
+            f"Quale equazione modella il costo della pasta x?"
+        )
+        correct = f"{n_packs} * x + {price_oil} = {total}"
+        d1 = f"x + {price_oil} = {total}"
+        d2 = f"{n_packs} * x * {price_oil} = {total}"
+        d3 = f"{n_packs} + x + {price_oil} = {total}"
+        d4 = f"x * {price_oil} + {n_packs} = {total}"
+        explanation = (
+            f"Il problema dice che {name} compra {n_packs} confezioni a x euro "
+            f"piu' una bottiglia d'olio a {price_oil} euro per un totale di {total} euro. "
+            f"Che si traduce in {n_packs} * x + {price_oil} = {total} "
+            f"perche' il costo totale e' la somma di {n_packs} confezioni per il prezzo unitario piu' l'olio."
+        )
+        tip = "Costo totale = (quantita' * prezzo unitario) + costi fissi. Identifica cosa e' l'incognita."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _phone_plan():
+        name = _pick_name()
+        fixed = random.choice([5, 7, 8, 10, 12])
+        cents_per_min = random.choice([5, 10, 15, 20])
+        rate = round(cents_per_min / 100, 2)
+        minutes = random.randint(50, 300)
+        total = round(fixed + rate * minutes, 2)
+        question = (
+            f"Un piano telefonico costa {fixed} euro al mese di fisso "
+            f"piu' {cents_per_min} centesimi al minuto. "
+            f"{name} ha speso {total} euro questo mese. "
+            f"Quanti minuti m ha parlato?"
+        )
+        correct = f"{fixed} + {rate} * m = {total}"
+        d1 = f"{fixed} * m + {rate} = {total}"
+        d2 = f"{fixed} + {cents_per_min} * m = {total}"
+        d3 = f"m * {fixed} = {total} - {rate}"
+        d4 = f"{rate} * m - {fixed} = {total}"
+        explanation = (
+            f"Il problema dice che il costo e' {fixed} euro fissi piu' {cents_per_min} centesimi "
+            f"({rate} euro) per ogni minuto m. "
+            f"Che si traduce in {fixed} + {rate} * m = {total} "
+            f"perche' il costo totale e' la parte fissa piu' la parte variabile."
+        )
+        tip = "Attenzione alle unita': converti sempre i centesimi in euro (dividi per 100) prima di scrivere l'equazione."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _cooking_recipe():
+        name = _pick_name()
+        people_orig = random.choice([4, 6, 8])
+        people_target = random.choice([2, 3, 5, 10, 12])
+        while people_target == people_orig:
+            people_target = random.choice([2, 3, 5, 10, 12])
+        grams = random.choice([200, 250, 300, 400, 500])
+        question = (
+            f"Una ricetta per {people_orig} persone richiede {grams} grammi di farina. "
+            f"{name} deve cucinare per {people_target} persone. "
+            f"Quanta farina x (in grammi) gli serve?"
+        )
+        correct = f"{people_orig} : {grams} = {people_target} : x"
+        d1 = f"{grams} : {people_orig} = x : {people_target}"
+        d2 = f"x / {people_target} = {grams} * {people_orig}"
+        d3 = f"{people_orig} * x = {grams} + {people_target}"
+        d4 = f"x = {grams} - {people_orig} + {people_target}"
+        explanation = (
+            f"Il problema e' una proporzione diretta: se {people_orig} persone richiedono {grams} g, "
+            f"allora {people_target} persone richiedono x g. "
+            f"Che si traduce in {people_orig} : {grams} = {people_target} : x "
+            f"perche' il rapporto persone/farina deve restare costante."
+        )
+        tip = "Nelle proporzioni dirette A : B = C : D, il prodotto dei medi e' uguale al prodotto degli estremi: A*D = B*C."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
     # ================================================================
     #  LEVEL 2 TEMPLATES  (2 unknowns)
     # ================================================================
@@ -324,6 +406,91 @@ class WordModeler(Exercise):
             f"perche le distanze percorse si sommano fino a coprire la distanza totale."
         )
         tip = "Quando due oggetti si avvicinano, le distanze si sommano. Quando si allontanano, si sottraggono."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _train_tickets():
+        name = _pick_name()
+        n_adult = random.randint(2, 5)
+        n_child = random.randint(1, 4)
+        adult_price = random.choice([12, 15, 18, 20, 25])
+        child_price = adult_price // 2
+        total = n_adult * adult_price + n_child * child_price
+        question = (
+            f"{name} compra {n_adult} biglietti del treno adulto (x euro ciascuno) "
+            f"e {n_child} biglietti bambino (y euro ciascuno). "
+            f"Spende in tutto {total} euro. "
+            f"Il biglietto bambino costa meta' del biglietto adulto. "
+            f"Quale sistema modella il problema?"
+        )
+        correct = f"{n_adult} * x + {n_child} * y = {total}, y = x / 2"
+        d1 = f"{n_adult} * x + {n_child} * y = {total}, x = y / 2"
+        d2 = f"{n_adult} * x + {n_child} * y = {total}, y = x - 2"
+        d3 = f"x + y = {total}, {n_adult} * x = {n_child} * y"
+        d4 = f"{n_adult} + {n_child} = {total}, y = x / 2"
+        explanation = (
+            f"Il problema dice che {name} spende {total} euro per {n_adult} biglietti adulto e "
+            f"{n_child} biglietti bambino, con il bambino a meta' prezzo. "
+            f"Che si traduce in {n_adult}x + {n_child}y = {total} e y = x/2 "
+            f"perche' 'meta' del prezzo adulto' significa y = x/2."
+        )
+        tip = "'Costa la meta'' si traduce con y = x/2, non con x = y/2. Attenzione a chi e' la meta' di chi!"
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _sports_training():
+        name = _pick_name()
+        total_hours = random.randint(6, 20)
+        # running = 2 * swimming, so swimming = total / 3 (we just need total divisible nicely)
+        question = (
+            f"{name} si allena x ore di corsa e y ore di nuoto a settimana. "
+            f"In totale si allena {total_hours} ore. "
+            f"Corre il doppio delle ore in cui nuota. "
+            f"Quale sistema modella il problema?"
+        )
+        correct = f"x + y = {total_hours}, x = 2 * y"
+        d1 = f"x + y = {total_hours}, y = 2 * x"
+        d2 = f"x * y = {total_hours}, x = 2 * y"
+        d3 = f"x + y = {total_hours}, x = y + 2"
+        d4 = f"x - y = {total_hours}, x = 2 * y"
+        explanation = (
+            f"Il problema dice che il totale e' {total_hours} ore e che {name} corre il doppio "
+            f"delle ore di nuoto. "
+            f"Che si traduce in x + y = {total_hours} e x = 2y "
+            f"perche' 'il doppio' indica moltiplicazione per 2, non addizione di 2."
+        )
+        tip = "'Il doppio di' si traduce con moltiplicazione (x = 2y), non con addizione (x = y + 2)."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _electricity_bill():
+        fixed = random.randint(8, 25)
+        cost_kwh = random.choice([0.15, 0.20, 0.25, 0.30])
+        consumption_a = random.randint(100, 300)
+        consumption_b = random.randint(150, 400)
+        while consumption_b == consumption_a:
+            consumption_b = random.randint(150, 400)
+        total_a = round(fixed + cost_kwh * consumption_a, 2)
+        total_b = round(fixed + cost_kwh * consumption_b, 2)
+        question = (
+            f"La bolletta elettrica ha un costo fisso di x euro piu' un costo variabile "
+            f"di y euro per kWh. "
+            f"A gennaio il consumo e' stato {consumption_a} kWh con bolletta di {total_a} euro. "
+            f"A febbraio il consumo e' stato {consumption_b} kWh con bolletta di {total_b} euro. "
+            f"Quale sistema modella il problema?"
+        )
+        correct = f"x + {consumption_a} * y = {total_a}, x + {consumption_b} * y = {total_b}"
+        d1 = f"{consumption_a} * x + y = {total_a}, {consumption_b} * x + y = {total_b}"
+        d2 = f"x + y = {total_a}, x + y = {total_b}"
+        d3 = f"x * {consumption_a} * y = {total_a}, x * {consumption_b} * y = {total_b}"
+        d4 = f"x + {consumption_a} + y = {total_a}, x + {consumption_b} + y = {total_b}"
+        explanation = (
+            f"Il problema dice che la bolletta e' composta da un costo fisso x piu' un costo variabile "
+            f"y per ogni kWh consumato. "
+            f"Che si traduce in x + {consumption_a}y = {total_a} e x + {consumption_b}y = {total_b} "
+            f"perche' bolletta = fisso + (consumo * costo_unitario)."
+        )
+        tip = "Nei costi con parte fissa e variabile: totale = fisso + (quantita' * prezzo_unitario). Con due mesi diversi si ottiene un sistema."
         return question, correct, [d1, d2, d3, d4], explanation, tip
 
     # ================================================================
@@ -450,6 +617,63 @@ class WordModeler(Exercise):
         tip = "Nei problemi di lavoro congiunto, somma le frazioni di lavoro: (t/tempo_A) + (t/tempo_B) = 1."
         return question, correct, [d1, d2, d3, d4], explanation, tip
 
+    @staticmethod
+    def _travel_planning():
+        name = _pick_name()
+        speed_1 = random.choice([60, 80, 90, 100])
+        speed_2 = random.choice([30, 40, 50, 60])
+        while speed_2 == speed_1:
+            speed_2 = random.choice([30, 40, 50, 60])
+        total_time = random.randint(3, 8)
+        question = (
+            f"{name} va da citta' A a citta' B. "
+            f"Percorre la prima meta' del tragitto a {speed_1} km/h "
+            f"e la seconda meta' a {speed_2} km/h. "
+            f"Il viaggio dura in tutto {total_time} ore. "
+            f"Quanto e' lungo il percorso totale d?"
+        )
+        correct = f"d / (2 * {speed_1}) + d / (2 * {speed_2}) = {total_time}"
+        d1 = f"d / {speed_1} + d / {speed_2} = {total_time}"
+        d2 = f"d / ({speed_1} + {speed_2}) = {total_time}"
+        d3 = f"(d * {speed_1} + d * {speed_2}) / 2 = {total_time}"
+        d4 = f"d / (2 * {speed_1}) * d / (2 * {speed_2}) = {total_time}"
+        explanation = (
+            f"Il problema dice che {name} percorre meta' della distanza (d/2) a {speed_1} km/h "
+            f"e l'altra meta' (d/2) a {speed_2} km/h. "
+            f"Che si traduce in d/(2*{speed_1}) + d/(2*{speed_2}) = {total_time} "
+            f"perche' tempo = distanza/velocita' per ciascun tratto, e i tempi si sommano."
+        )
+        tip = "Quando la distanza e' divisa in parti, calcola il tempo di ogni tratto separatamente e poi sommali."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
+    @staticmethod
+    def _shared_apartment():
+        n1, n2 = _pick_two_names()
+        n3 = _pick_name(exclude=n1)
+        while n3 == n2:
+            n3 = _pick_name(exclude=n1)
+        diff = random.choice([50, 80, 100, 120, 150])
+        total_rent = random.randint(800, 1800)
+        question = (
+            f"Tre coinquilini dividono l'affitto di {total_rent} euro al mese. "
+            f"{n1} paga x euro, il doppio di {n2} (y euro) perche' ha la stanza piu' grande. "
+            f"{n3} paga z euro, cioe' {diff} euro in meno di {n1}. "
+            f"Quale sistema modella il problema?"
+        )
+        correct = f"x + y + z = {total_rent}, x = 2 * y, z = x - {diff}"
+        d1 = f"x + y + z = {total_rent}, y = 2 * x, z = x - {diff}"
+        d2 = f"x + y + z = {total_rent}, x = 2 * y, z = x + {diff}"
+        d3 = f"x * y * z = {total_rent}, x = 2 * y, z = x - {diff}"
+        d4 = f"x + y + z = {total_rent}, x = y + 2, z = x - {diff}"
+        explanation = (
+            f"Il problema dice che l'affitto totale e' {total_rent}, {n1} paga il doppio di {n2}, "
+            f"e {n3} paga {diff} euro in meno di {n1}. "
+            f"Che si traduce in x + y + z = {total_rent}, x = 2y e z = x - {diff} "
+            f"perche' 'il doppio' e' moltiplicazione e '{diff} in meno' e' sottrazione."
+        )
+        tip = "Nei problemi con piu' incognite, scrivi una equazione per ogni relazione data e una per il totale."
+        return question, correct, [d1, d2, d3, d4], explanation, tip
+
     # ================================================================
     #  Template registry by difficulty
     # ================================================================
@@ -463,6 +687,9 @@ class WordModeler(Exercise):
             self._percentage_increase,
             self._rectangle_perimeter,
             self._consecutive_numbers,
+            self._supermarket_shopping,
+            self._phone_plan,
+            self._cooking_recipe,
         ]
         level_2 = [
             self._two_workers,
@@ -470,6 +697,9 @@ class WordModeler(Exercise):
             self._two_prices,
             self._age_problem_double,
             self._speed_encounter,
+            self._train_tickets,
+            self._sports_training,
+            self._electricity_bill,
         ]
         level_3 = [
             self._system_ages,
@@ -477,6 +707,8 @@ class WordModeler(Exercise):
             self._investment_system,
             self._geometry_triangle_system,
             self._work_rate_system,
+            self._travel_planning,
+            self._shared_apartment,
         ]
         if difficulty == 1:
             return level_1

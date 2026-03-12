@@ -896,20 +896,559 @@ class GraphReader(Exercise):
         }
 
     # ------------------------------------------------------------------
+    # Injectivity / Invertibility / Codomain / Injectivity-intervals
+    # ------------------------------------------------------------------
+
+    def _template_injectivity(self) -> dict:
+        """La funzione è iniettiva? (test della retta orizzontale)."""
+        # Catalogue: (family_key, injective?, builder, expr_builder, extra_info)
+        catalogue = []
+
+        # Linear: always injective (m != 0)
+        m = random.choice([-3, -2, -1, 1, 2, 3])
+        q = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            "linear", True,
+            _linear(m, q), _expr_linear(m, q),
+            (-5, 5), (-6, 6),
+            "Una funzione lineare (con m ≠ 0) è sempre iniettiva: "
+            "ogni retta orizzontale interseca il grafico al più in un punto.",
+        ))
+
+        # Quadratic: NOT injective
+        a = random.choice([-2, -1, 1, 2])
+        h = random.choice([-2, -1, 0, 1, 2])
+        k = random.choice([-2, -1, 0, 1, 2])
+        yr = max(abs(k) + 5, 6)
+        catalogue.append((
+            "quadratic", False,
+            _quadratic(a, h, k), _expr_quadratic(a, h, k),
+            (-5, 5), (-yr, yr),
+            f"Una parabola non è iniettiva: ad esempio la retta orizzontale "
+            f"y = {_fmt_num(k + abs(a))} interseca il grafico in due punti.",
+        ))
+
+        # Abs: NOT injective
+        a_abs = random.choice([-2, -1, 1, 2])
+        h_abs = random.choice([-2, -1, 0, 1, 2])
+        k_abs = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            "abs", False,
+            _abs_value(a_abs, h_abs, k_abs), _expr_abs(a_abs, h_abs, k_abs),
+            (-5, 5), (-5, 6),
+            f"La funzione valore assoluto non è iniettiva: la retta orizzontale "
+            f"y = {_fmt_num(k_abs + abs(a_abs))} interseca il grafico in due punti.",
+        ))
+
+        # Exponential: always injective
+        a_exp = random.choice([-1, 1])
+        b_exp = random.choice([2, 3])
+        k_exp = random.choice([-1, 0, 1])
+        catalogue.append((
+            "exponential", True,
+            _exponential(a_exp, b_exp, k_exp), _expr_exponential(a_exp, b_exp, k_exp),
+            (-3, 4), (-5, 10),
+            "Una funzione esponenziale è sempre iniettiva: "
+            "è strettamente monotona (sempre crescente o sempre decrescente).",
+        ))
+
+        # Logarithmic: always injective
+        a_log = random.choice([-1, 1])
+        h_log = random.choice([0, 1])
+        k_log = random.choice([-1, 0, 1])
+        catalogue.append((
+            "logarithmic", True,
+            _logarithmic(a_log, h_log, k_log), _expr_logarithmic(a_log, h_log, k_log),
+            (-1 + h_log, 8), (-5, 5),
+            "Una funzione logaritmica è sempre iniettiva: "
+            "è strettamente monotona sul suo dominio.",
+        ))
+
+        # Sin: NOT injective
+        a_sin = random.choice([1, 2])
+        b_sin = random.choice([1, 2])
+        catalogue.append((
+            "sin", False,
+            _sin_func(a_sin, b_sin, 0, 0), _expr_sin(a_sin, b_sin, 0, 0),
+            (-7, 7), (-4, 4),
+            "La funzione seno non è iniettiva: essendo periodica, "
+            "ogni retta orizzontale y = c (con |c| ≤ ampiezza) interseca il grafico in infiniti punti.",
+        ))
+
+        # Cos: NOT injective
+        a_cos = random.choice([1, 2])
+        b_cos = random.choice([1, 2])
+        catalogue.append((
+            "cos", False,
+            _cos_func(a_cos, b_cos, 0, 0), _expr_cos(a_cos, b_cos, 0, 0),
+            (-7, 7), (-4, 4),
+            "La funzione coseno non è iniettiva: essendo periodica, "
+            "ogni retta orizzontale y = c (con |c| ≤ ampiezza) interseca il grafico in infiniti punti.",
+        ))
+
+        # Sqrt: always injective
+        a_sq = random.choice([1, 2])
+        h_sq = random.choice([0, 1, 2])
+        k_sq = random.choice([-1, 0, 1])
+        catalogue.append((
+            "sqrt", True,
+            _sqrt_func(a_sq, h_sq, k_sq), _expr_sqrt(a_sq, h_sq, k_sq),
+            (h_sq - 1, h_sq + 8), (-1, 5),
+            "La funzione radice quadrata è sempre iniettiva: "
+            "è strettamente crescente sul suo dominio.",
+        ))
+
+        # Reciprocal: injective on each branch (we consider the full domain)
+        a_rec = random.choice([-1, 1])
+        h_rec = random.choice([-1, 0, 1])
+        k_rec = random.choice([-1, 0, 1])
+        catalogue.append((
+            "reciprocal", True,
+            _reciprocal(a_rec, h_rec, k_rec), _expr_reciprocal(a_rec, h_rec, k_rec),
+            (-6, 6), (-6, 6),
+            f"La funzione reciproca y = {_expr_reciprocal(a_rec, h_rec, k_rec)[4:]} è iniettiva "
+            f"sul suo dominio (x ≠ {_fmt_num(h_rec)}): è strettamente monotona su ciascun ramo "
+            f"e i due rami hanno immagini disgiunte.",
+        ))
+
+        choice = random.choice(catalogue)
+        family_key, is_injective, func, expr_str, x_range, y_range, reason = choice
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        if is_injective:
+            correct = "Sì, è iniettiva"
+        else:
+            correct = "No, non è iniettiva"
+
+        distractors = [
+            "No, non è iniettiva" if is_injective else "Sì, è iniettiva",
+            "Solo per x > 0",
+            "Solo per x ≥ 0",
+            "Dipende dal dominio considerato",
+            "Sì, ma solo se restringiamo il codominio",
+            "Non si può determinare dal grafico",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Una funzione è iniettiva se ogni elemento del codominio è immagine di "
+            f"al più un elemento del dominio. Graficamente, si usa il "
+            f"test della retta orizzontale: se ogni retta orizzontale interseca "
+            f"il grafico in al più un punto, la funzione è iniettiva. "
+            f"{reason}"
+        )
+
+        return {
+            "question": f"Data {expr_str}, la funzione è iniettiva?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Il test della retta orizzontale è il metodo grafico per verificare "
+                "l'iniettività: traccia rette orizzontali e verifica che ciascuna "
+                "intersechi il grafico in al più un punto."
+            ),
+        }
+
+    def _template_invertibility(self) -> dict:
+        """La funzione è invertibile? (iniettiva + suriettiva sul codominio)."""
+        catalogue = []
+
+        # Linear: invertible (bijective R -> R)
+        m = random.choice([-3, -2, -1, 1, 2, 3])
+        q = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            True,
+            _linear(m, q), _expr_linear(m, q),
+            (-5, 5), (-6, 6),
+            f"La funzione lineare {_expr_linear(m, q)} è invertibile: "
+            f"è iniettiva (strettamente monotona) e suriettiva su ℝ. "
+            f"La sua inversa è x = (y{_fmt_num(-q, always_sign=True)})/{_fmt_num(m)}.",
+        ))
+
+        # Quadratic: NOT invertible (not injective on R)
+        a = random.choice([-2, -1, 1, 2])
+        h = random.choice([-1, 0, 1])
+        k = random.choice([-2, -1, 0, 1, 2])
+        yr = max(abs(k) + 5, 6)
+        catalogue.append((
+            False,
+            _quadratic(a, h, k), _expr_quadratic(a, h, k),
+            (-5, 5), (-yr, yr),
+            f"La parabola {_expr_quadratic(a, h, k)} non è invertibile su tutto ℝ: "
+            f"non è iniettiva (la retta orizzontale y = {_fmt_num(k + abs(a))} "
+            f"interseca il grafico in due punti). "
+            f"Sarebbe invertibile se restringessimo il dominio a x ≥ {_fmt_num(h)} "
+            f"oppure x ≤ {_fmt_num(h)}.",
+        ))
+
+        # Exponential: invertible (its inverse is the logarithm)
+        a_exp = 1
+        b_exp = random.choice([2, 3])
+        k_exp = 0
+        catalogue.append((
+            True,
+            _exponential(a_exp, b_exp, k_exp), _expr_exponential(a_exp, b_exp, k_exp),
+            (-3, 4), (-1, 10),
+            f"La funzione esponenziale {_expr_exponential(a_exp, b_exp, k_exp)} è invertibile: "
+            f"è strettamente crescente (iniettiva) e la sua immagine è (0, +∞). "
+            f"La sua inversa è il logaritmo in base {_fmt_num(b_exp)}.",
+        ))
+
+        # Abs: NOT invertible
+        a_abs = random.choice([1, 2])
+        h_abs = random.choice([-1, 0, 1])
+        k_abs = random.choice([-1, 0, 1])
+        catalogue.append((
+            False,
+            _abs_value(a_abs, h_abs, k_abs), _expr_abs(a_abs, h_abs, k_abs),
+            (-5, 5), (-5, 6),
+            f"La funzione valore assoluto {_expr_abs(a_abs, h_abs, k_abs)} non è invertibile "
+            f"su tutto ℝ: non è iniettiva. "
+            f"Sarebbe invertibile restringendo il dominio a x ≥ {_fmt_num(h_abs)} "
+            f"oppure x ≤ {_fmt_num(h_abs)}.",
+        ))
+
+        # Logarithmic: invertible (its inverse is the exponential)
+        a_log = 1
+        h_log = 0
+        k_log = 0
+        catalogue.append((
+            True,
+            _logarithmic(a_log, h_log, k_log), _expr_logarithmic(a_log, h_log, k_log),
+            (-1, 8), (-5, 5),
+            "La funzione logaritmo naturale ln(x) è invertibile: "
+            "è strettamente crescente su (0, +∞) e la sua inversa è e^x.",
+        ))
+
+        # Sin: NOT invertible (periodic)
+        catalogue.append((
+            False,
+            _sin_func(1, 1, 0, 0), _expr_sin(1, 1, 0, 0),
+            (-7, 7), (-2, 2),
+            "La funzione sin(x) non è invertibile su tutto ℝ: essendo periodica, "
+            "non è iniettiva. Si definisce la funzione arcoseno restringendo "
+            "il dominio a [-π/2, π/2].",
+        ))
+
+        choice = random.choice(catalogue)
+        is_invertible, func, expr_str, x_range, y_range, reason = choice
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        if is_invertible:
+            correct = "Sì, è invertibile"
+        else:
+            correct = "No, non è invertibile"
+
+        distractors = [
+            "No, non è invertibile" if is_invertible else "Sì, è invertibile",
+            "Solo restringendo il dominio",
+            "Sì, ma l'inversa non è una funzione",
+            "Dipende dal codominio scelto",
+            "Solo per x > 0",
+            "Non si può determinare",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Una funzione è invertibile se è biiettiva, cioè iniettiva e suriettiva "
+            f"(sul codominio considerato). "
+            f"Graficamente, deve superare il test della retta orizzontale. "
+            f"{reason}"
+        )
+
+        return {
+            "question": f"Data {expr_str}, la funzione è invertibile (sul suo dominio naturale)?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Una funzione invertibile ha un'inversa f⁻¹ tale che f(f⁻¹(y)) = y e "
+                "f⁻¹(f(x)) = x. Il grafico dell'inversa è il simmetrico rispetto "
+                "alla retta y = x."
+            ),
+        }
+
+    def _template_codomain(self) -> dict:
+        """Qual è l'immagine (codominio effettivo) di f?"""
+        catalogue = []
+
+        # Linear: image = R
+        m = random.choice([-3, -2, -1, 1, 2, 3])
+        q = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            "ℝ (tutti i reali)",
+            _linear(m, q), _expr_linear(m, q),
+            (-5, 5), (-6, 6),
+            "Una funzione lineare con m ≠ 0 ha come immagine tutto ℝ: "
+            "la retta si estende all'infinito in entrambe le direzioni.",
+        ))
+
+        # Quadratic a > 0: image = [k, +∞)
+        a_pos = random.choice([1, 2])
+        h_q = random.choice([-2, -1, 0, 1, 2])
+        k_q = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        yr = max(abs(k_q) + 5, 6)
+        catalogue.append((
+            f"[{_fmt_num(k_q)}, +∞)",
+            _quadratic(a_pos, h_q, k_q), _expr_quadratic(a_pos, h_q, k_q),
+            (-5, 5), (-yr, yr),
+            f"La parabola si apre verso l'alto con vertice in "
+            f"({_fmt_num(h_q)}, {_fmt_num(k_q)}). Il valore minimo è {_fmt_num(k_q)}, "
+            f"quindi l'immagine è [{_fmt_num(k_q)}, +∞).",
+        ))
+
+        # Quadratic a < 0: image = (-∞, k]
+        a_neg = random.choice([-2, -1])
+        h_q2 = random.choice([-2, -1, 0, 1, 2])
+        k_q2 = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        yr2 = max(abs(k_q2) + 5, 6)
+        catalogue.append((
+            f"(-∞, {_fmt_num(k_q2)}]",
+            _quadratic(a_neg, h_q2, k_q2), _expr_quadratic(a_neg, h_q2, k_q2),
+            (-5, 5), (-yr2, yr2),
+            f"La parabola si apre verso il basso con vertice in "
+            f"({_fmt_num(h_q2)}, {_fmt_num(k_q2)}). Il valore massimo è {_fmt_num(k_q2)}, "
+            f"quindi l'immagine è (-∞, {_fmt_num(k_q2)}].",
+        ))
+
+        # Exponential a > 0: image = (k, +∞)
+        b_exp = random.choice([2, 3])
+        k_exp = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            f"({_fmt_num(k_exp)}, +∞)",
+            _exponential(1, b_exp, k_exp), _expr_exponential(1, b_exp, k_exp),
+            (-3, 4), (k_exp - 2, k_exp + 10),
+            f"La funzione esponenziale con a > 0 ha asintoto orizzontale y = {_fmt_num(k_exp)} "
+            f"e cresce verso +∞. L'immagine è ({_fmt_num(k_exp)}, +∞) — "
+            f"il valore {_fmt_num(k_exp)} non viene mai raggiunto.",
+        ))
+
+        # Exponential a < 0: image = (-∞, k)
+        k_exp2 = random.choice([-1, 0, 1, 2])
+        catalogue.append((
+            f"(-∞, {_fmt_num(k_exp2)})",
+            _exponential(-1, 2, k_exp2), _expr_exponential(-1, 2, k_exp2),
+            (-3, 4), (k_exp2 - 10, k_exp2 + 2),
+            f"La funzione esponenziale con a < 0 ha asintoto orizzontale y = {_fmt_num(k_exp2)} "
+            f"e decresce verso -∞. L'immagine è (-∞, {_fmt_num(k_exp2)}).",
+        ))
+
+        # Sqrt a > 0: image = [k, +∞)
+        a_sq = random.choice([1, 2])
+        h_sq = random.choice([0, 1, 2])
+        k_sq = random.choice([-1, 0, 1])
+        catalogue.append((
+            f"[{_fmt_num(k_sq)}, +∞)",
+            _sqrt_func(a_sq, h_sq, k_sq), _expr_sqrt(a_sq, h_sq, k_sq),
+            (h_sq - 1, h_sq + 8), (-1, 5),
+            f"La funzione radice quadrata con a > 0 parte dal valore minimo "
+            f"f({_fmt_num(h_sq)}) = {_fmt_num(k_sq)} e cresce. L'immagine è [{_fmt_num(k_sq)}, +∞).",
+        ))
+
+        choice = random.choice(catalogue)
+        correct, func, expr_str, x_range, y_range, reason = choice
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        # Build plausible distractors
+        all_possible = [
+            "ℝ (tutti i reali)",
+            "[0, +∞)",
+            "(0, +∞)",
+            "(-∞, 0]",
+            "(-∞, 0)",
+            "[-1, +∞)",
+            "(1, +∞)",
+            "(-∞, 1]",
+            "(-∞, 1)",
+            "[-2, +∞)",
+            "(2, +∞)",
+            "(-∞, 2]",
+            "(-∞, -1)",
+            "[-3, +∞)",
+            "(3, +∞)",
+            "(-∞, 3]",
+            "(-∞, -2]",
+            "(-∞, -3]",
+        ]
+        distractors = [d for d in all_possible if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"L'immagine (o codominio effettivo) di una funzione è l'insieme di tutti "
+            f"i valori y effettivamente assunti da f(x). {reason}"
+        )
+
+        return {
+            "question": f"Qual è l'immagine (insieme dei valori) di {expr_str}?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "L'immagine di una funzione è un sottoinsieme del codominio: "
+                "comprende solo i valori y che la funzione assume effettivamente. "
+                "Graficamente, è la proiezione del grafico sull'asse y."
+            ),
+        }
+
+    def _template_injectivity_intervals(self) -> dict:
+        """Su quali intervalli la funzione è iniettiva? (per funzioni non iniettive)."""
+        catalogue = []
+
+        # Quadratic
+        a = random.choice([-2, -1, 1, 2])
+        h = random.choice([-2, -1, 0, 1, 2])
+        k = random.choice([-2, -1, 0, 1, 2])
+        yr = max(abs(k) + 5, 6)
+        catalogue.append((
+            f"(-∞, {_fmt_num(h)}] oppure [{_fmt_num(h)}, +∞)",
+            _quadratic(a, h, k), _expr_quadratic(a, h, k),
+            (-5, 5), (-yr, yr),
+            f"La parabola {_expr_quadratic(a, h, k)} ha il vertice in x = {_fmt_num(h)}. "
+            f"A sinistra del vertice è strettamente monotona "
+            f"({'decrescente' if a > 0 else 'crescente'}), "
+            f"a destra è strettamente monotona "
+            f"({'crescente' if a > 0 else 'decrescente'}). "
+            f"Quindi è iniettiva su (-∞, {_fmt_num(h)}] e su [{_fmt_num(h)}, +∞).",
+            h,
+        ))
+
+        # Abs value
+        a_abs = random.choice([-2, -1, 1, 2])
+        h_abs = random.choice([-2, -1, 0, 1, 2])
+        k_abs = random.choice([-2, -1, 0, 1, 2])
+        catalogue.append((
+            f"(-∞, {_fmt_num(h_abs)}] oppure [{_fmt_num(h_abs)}, +∞)",
+            _abs_value(a_abs, h_abs, k_abs), _expr_abs(a_abs, h_abs, k_abs),
+            (-5, 5), (-5, 6),
+            f"La funzione valore assoluto {_expr_abs(a_abs, h_abs, k_abs)} ha il vertice "
+            f"in x = {_fmt_num(h_abs)}. A sinistra è strettamente monotona "
+            f"({'decrescente' if a_abs > 0 else 'crescente'}), "
+            f"a destra è strettamente monotona "
+            f"({'crescente' if a_abs > 0 else 'decrescente'}). "
+            f"Quindi è iniettiva su (-∞, {_fmt_num(h_abs)}] e su [{_fmt_num(h_abs)}, +∞).",
+            h_abs,
+        ))
+
+        # Sin
+        a_sin = random.choice([1, 2])
+        b_sin = random.choice([1, 2])
+        half_period = round(math.pi / b_sin, 2)
+        catalogue.append((
+            f"Intervalli di ampiezza π/{_fmt_num(b_sin)} (es. [-{half_period}, {half_period}])",
+            _sin_func(a_sin, b_sin, 0, 0), _expr_sin(a_sin, b_sin, 0, 0),
+            (-7, 7), (-4, 4),
+            f"La funzione {_expr_sin(a_sin, b_sin, 0, 0)} è periodica con periodo "
+            f"2π/{_fmt_num(b_sin)} ≈ {_fmt_num(round(2 * math.pi / b_sin, 2))}. "
+            f"È iniettiva su ciascun intervallo di ampiezza pari a mezzo periodo, "
+            f"cioè π/{_fmt_num(b_sin)} ≈ {_fmt_num(half_period)}.",
+            0,
+        ))
+
+        # Cos
+        a_cos = random.choice([1, 2])
+        b_cos = random.choice([1, 2])
+        half_period_cos = round(math.pi / b_cos, 2)
+        catalogue.append((
+            f"Intervalli di ampiezza π/{_fmt_num(b_cos)} (es. [0, {half_period_cos}])",
+            _cos_func(a_cos, b_cos, 0, 0), _expr_cos(a_cos, b_cos, 0, 0),
+            (-7, 7), (-4, 4),
+            f"La funzione {_expr_cos(a_cos, b_cos, 0, 0)} è periodica con periodo "
+            f"2π/{_fmt_num(b_cos)} ≈ {_fmt_num(round(2 * math.pi / b_cos, 2))}. "
+            f"È iniettiva su ciascun intervallo di ampiezza pari a mezzo periodo, "
+            f"cioè π/{_fmt_num(b_cos)} ≈ {_fmt_num(half_period_cos)}.",
+            0,
+        ))
+
+        choice = random.choice(catalogue)
+        correct, func, expr_str, x_range, y_range, reason, vertex = choice
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        # Build distractors
+        v = vertex
+        all_possible = [
+            f"(-∞, {_fmt_num(v + 1)}] oppure [{_fmt_num(v + 1)}, +∞)",
+            f"(-∞, {_fmt_num(v - 1)}] oppure [{_fmt_num(v - 1)}, +∞)",
+            "È sempre iniettiva su tutto ℝ",
+            "Non è mai iniettiva su alcun intervallo",
+            f"Solo su [{_fmt_num(v)}, +∞)",
+            f"Solo su (-∞, {_fmt_num(v)}]",
+            f"(-∞, {_fmt_num(v + 2)}] oppure [{_fmt_num(v + 2)}, +∞)",
+            "Solo per x > 0",
+            "Intervalli di ampiezza 2π",
+            "Intervalli di ampiezza π",
+            f"Intervalli di ampiezza π/2 (es. [0, {_fmt_num(round(math.pi / 2, 2))}])",
+        ]
+        distractors = [d for d in all_possible if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Una funzione non iniettiva su tutto il dominio può essere iniettiva "
+            f"se ci si restringe a intervalli opportuni dove è strettamente monotona. "
+            f"{reason}"
+        )
+
+        return {
+            "question": f"Su quali intervalli la funzione {expr_str} è iniettiva?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Restringere il dominio di una funzione per renderla iniettiva è il primo "
+                "passo per definire la sua funzione inversa. Ad esempio, arcsin è "
+                "l'inversa di sin ristretta a [-π/2, π/2]."
+            ),
+        }
+
+    # ------------------------------------------------------------------
 
     def generate(self, difficulty: int) -> dict:
         difficulty = max(1, min(3, difficulty))
 
-        # At L2/L3, mix in domain/evaluation/sign templates
+        # At L2/L3, mix in domain/evaluation/sign/injectivity templates
         if difficulty >= 2:
             domain_templates = [
                 self._template_domain_logarithmic,
                 self._template_domain_rational,
                 self._template_domain_sqrt,
                 self._template_function_evaluation,
+                self._template_injectivity,
+                self._template_invertibility,
+                self._template_codomain,
             ]
             if difficulty == 3:
                 domain_templates.append(self._template_sign_of_function)
+                domain_templates.append(self._template_injectivity_intervals)
 
             # ~35% chance of a domain/evaluation/sign template at L2+
             if random.random() < 0.35:
