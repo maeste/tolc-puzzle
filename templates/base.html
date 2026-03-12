@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TOLC-B Math Mindset Trainer{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="logo">🧠 Math Mindset</a>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/results">Progressi</a>
+                <a href="/simulation">Simulazione</a>
+            </div>
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="zen" title="Nessun timer">🧘 Zen</button>
+                <button class="mode-btn" data-mode="relaxed" title="4 min/domanda">⏱️ Rilassato</button>
+                <button class="mode-btn" data-mode="exam" title="2.5 min/domanda">🔥 Esame</button>
+            </div>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>TOLC-B Math Mindset Trainer — Costruisci il tuo mindset, un esercizio alla volta 💪</p>
+    </footer>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

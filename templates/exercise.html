@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ info.name }} — TOLC-B Math Mindset Trainer{% endblock %}
+
+{% block content %}
+<section class="exercise-header">
+    <a href="/" class="back-link">← Dashboard</a>
+    <h1>{{ info.icon }} {{ info.name }}</h1>
+    <div class="difficulty-selector">
+        <button class="diff-btn active" data-diff="1">⭐</button>
+        <button class="diff-btn" data-diff="2">⭐⭐</button>
+        <button class="diff-btn" data-diff="3">⭐⭐⭐</button>
+    </div>
+</section>
+
+<div id="timer-bar" class="timer-bar hidden">
+    <div class="timer-fill"></div>
+    <span class="timer-text"></span>
+</div>
+
+<section id="exercise-area" class="exercise-area">
+    <div class="loading">Caricamento esercizio...</div>
+</section>
+
+<section id="feedback-area" class="feedback-area hidden">
+</section>
+
+<div class="exercise-actions">
+    <button id="btn-check" class="btn btn-primary" disabled>Verifica risposta</button>
+    <button id="btn-next" class="btn btn-secondary hidden">Prossimo esercizio →</button>
+    <button id="btn-skip" class="btn btn-ghost">Salta</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.EXERCISE_TYPE = "{{ exercise_type }}";
+</script>
+<script src="{{ url_for('static', filename='js/exercise.js') }}"></script>
+{% endblock %}

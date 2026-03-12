@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Progressi — TOLC-B Math Mindset Trainer{% endblock %}
+
+{% block content %}
+<section class="results-header">
+    <h1>📊 I tuoi progressi</h1>
+</section>
+<section id="results-content" class="results-content">
+    <div class="loading">Caricamento progressi...</div>
+</section>
+
+<!-- Modal overlay for wrong answers review -->
+<div id="wrong-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-title"></h2>
+            <button id="modal-close" class="btn btn-ghost modal-close-btn">&times;</button>
+        </div>
+        <div id="modal-body" class="modal-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.EXERCISE_TYPES = {
+        {% for key, ex in exercise_types.items() %}
+        "{{ key }}": { "name": "{{ ex.name }}", "icon": "{{ ex.icon }}", "desc": "{{ ex.desc }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/results.js') }}"></script>
+{% endblock %}

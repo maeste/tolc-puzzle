@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TOLC-B Math Mindset Trainer{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>🧠 TOLC-B Math Mindset Trainer</h1>
+    <p class="subtitle">Costruisci il tuo mindset problem-solving, un esercizio alla volta</p>
+    <div id="suggestion" class="suggestion"></div>
+</section>
+
+<section class="exercises-grid">
+    {% for key, ex in exercise_types.items() %}
+    <a href="/exercise/{{ key }}" class="exercise-card" data-type="{{ key }}">
+        <div class="card-icon">{{ ex.icon }}</div>
+        <h3>{{ ex.name }}</h3>
+        <p>{{ ex.desc }}</p>
+        <div class="card-stats">
+            <span class="stat" data-stat="completed">0 completati</span>
+            <span class="stat" data-stat="accuracy">—</span>
+            <span class="stat" data-stat="streak">🔥 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" data-type="{{ key }}"></div></div>
+    </a>
+    {% endfor %}
+</section>
+
+<section class="simulation-cta">
+    <a href="/simulation" class="btn btn-primary btn-large">
+        🎯 Simulazione TOLC-B — 20 domande, 50 minuti
+    </a>
+</section>
+
+<section class="danger-zone">
+    <h3>Zona pericolosa</h3>
+    <p>Questa azione cancella tutti i progressi, le statistiche e le streak. Non è reversibile.</p>
+    <button id="btn-reset" class="btn btn-danger">Cancella tutti i progressi</button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById("btn-reset")?.addEventListener("click", () => {
+        if (confirm("Sei sicuro? Tutti i progressi, le statistiche e le streak verranno cancellati definitivamente.")) {
+            localStorage.removeItem("tolc_progress");
+            localStorage.removeItem("tolc_wrong");
+            localStorage.removeItem("tolc_mode");
+            location.reload();
+        }
+    });
+
+    window.EXERCISE_TYPES = {
+        {% for key, ex in exercise_types.items() %}
+        "{{ key }}": { "name": "{{ ex.name }}", "icon": "{{ ex.icon }}", "desc": "{{ ex.desc }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+</script>
+{% endblock %}
