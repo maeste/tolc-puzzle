@@ -40,6 +40,8 @@ class ProbabilityGame(Exercise):
                 self._comb_combinazioni,
                 self._comb_principio_conteggio,
                 self._comb_disposizioni,
+                self._comb_digit_constraint,
+                self._comb_seating_adjacent,
             ]
         else:
             templates = [
@@ -51,6 +53,8 @@ class ProbabilityGame(Exercise):
                 self._comb_inclusione_esclusione,
                 self._comb_permutazioni_con_ripetizione,
                 self._comb_probabilita_combinatorica,
+                self._comb_digits_no_repeat,
+                self._comb_selection_exclusion,
             ]
 
         template_fn = random.choice(templates)
@@ -1297,5 +1301,238 @@ class ProbabilityGame(Exercise):
                 "La probabilita' combinatorica usa il rapporto tra combinazioni favorevoli "
                 "e combinazioni totali: P = C(favorevoli) / C(totali). "
                 "E' l'approccio classico per problemi di estrazione senza rimpiazzo."
+            ),
+        )
+
+    # ==================================================================
+    #  CONSTRAINED COMBINATORICS TEMPLATES
+    # ==================================================================
+
+    # Template CC1: Digit constraint (L2)
+    def _comb_digit_constraint(self, difficulty: int) -> dict:
+        n_digits = random.choice([3, 4])
+        pool = list(range(1, 10))
+        random.shuffle(pool)
+        digit_set = sorted(pool[:random.randint(4, 5)])
+
+        odd_digits = [d for d in digit_set if d % 2 == 1]
+        even_digits = [d for d in digit_set if d % 2 == 0]
+
+        # Ensure the chosen constraint has at least one matching digit
+        if odd_digits and even_digits:
+            constraint = random.choice(["dispari", "pari"])
+        elif odd_digits:
+            constraint = "dispari"
+        else:
+            constraint = "pari"
+
+        if constraint == "dispari":
+            last_choices = len(odd_digits)
+        else:
+            last_choices = len(even_digits)
+
+        total_digits = len(digit_set)
+        other_positions = total_digits ** (n_digits - 1)
+        correct = other_positions * last_choices
+
+        digit_str = ", ".join(str(d) for d in digit_set)
+
+        # Distractors: total without constraint, off-by-one last digit,
+        # n! instead of n^n, swap constraint
+        total_no_constraint = total_digits ** n_digits
+        if constraint == "dispari":
+            swapped_choices = len(even_digits)
+        else:
+            swapped_choices = len(odd_digits)
+        swapped_answer = other_positions * swapped_choices
+        factorial_wrong = math.factorial(total_digits)
+        off_by_one = other_positions * (last_choices + 1) if last_choices + 1 <= total_digits else other_positions * max(last_choices - 1, 1)
+
+        distractors_candidates = [total_no_constraint, swapped_answer, factorial_wrong, off_by_one]
+        distractors = [c for c in distractors_candidates if c != correct and c > 0]
+        distractors = list(dict.fromkeys(distractors))[:4]
+        while len(distractors) < 4:
+            d = correct + random.choice([-3, -2, -1, 1, 2, 3]) * random.randint(1, 5)
+            if d > 0 and d != correct and d not in distractors:
+                distractors.append(d)
+
+        return self._build_int_result(
+            question=(
+                f"Quanti numeri di {n_digits} cifre si possono formare usando le cifre "
+                f"{{{digit_str}}} (con ripetizione) tali che il numero sia {constraint}?"
+            ),
+            correct_int=correct,
+            distractors_int=distractors[:4],
+            svg="",
+            explanation=(
+                f"Le cifre disponibili sono {{{digit_str}}} ({total_digits} cifre). "
+                f"L'ultima cifra deve essere {constraint}: "
+                f"{last_choices} scelte possibili. "
+                f"Le altre {n_digits - 1} posizioni hanno {total_digits} scelte ciascuna: "
+                f"{total_digits}^{n_digits - 1} = {other_positions}. "
+                f"Totale: {other_positions} x {last_choices} = {correct}."
+            ),
+            did_you_know=(
+                "Nei problemi di conteggio con vincoli su cifre, si fissa prima la posizione "
+                "vincolata (ad es. l'ultima cifra per parita') e poi si contano le scelte "
+                "per le posizioni libere."
+            ),
+        )
+
+    # Template CC2: Seating adjacent (L2)
+    def _comb_seating_adjacent(self, difficulty: int) -> dict:
+        n = random.choice([4, 5, 6])
+        names_pool = ["Marco", "Luca", "Sara", "Giulia", "Andrea", "Anna", "Giovanni", "Laura"]
+        random.shuffle(names_pool)
+        selected_names = names_pool[:n]
+        name_a = selected_names[0]
+        name_b = selected_names[1]
+
+        correct = 2 * math.factorial(n - 1)
+
+        n_fact = math.factorial(n)
+        n_minus_1_fact = math.factorial(n - 1)
+        two_n_fact = 2 * n_fact
+        wrong_div = n_fact * 2 // max(n - 1, 1)
+
+        distractors_candidates = [n_fact, n_minus_1_fact, two_n_fact, wrong_div]
+        distractors = [c for c in distractors_candidates if c != correct and c > 0]
+        distractors = list(dict.fromkeys(distractors))[:4]
+        while len(distractors) < 4:
+            d = correct + random.choice([-3, -2, -1, 1, 2, 3]) * random.randint(1, 5)
+            if d > 0 and d != correct and d not in distractors:
+                distractors.append(d)
+
+        names_str = ", ".join(selected_names)
+
+        return self._build_int_result(
+            question=(
+                f"In quanti modi {n} persone ({names_str}) possono sedersi in fila "
+                f"se {name_a} e {name_b} devono stare vicini?"
+            ),
+            correct_int=correct,
+            distractors_int=distractors[:4],
+            svg="",
+            explanation=(
+                f"Si trattano {name_a} e {name_b} come un blocco unico. "
+                f"Ci sono quindi {n - 1} unita' da disporre: ({n - 1})! = {n_minus_1_fact} modi. "
+                f"Il blocco puo' essere ordinato in 2 modi ({name_a}-{name_b} o {name_b}-{name_a}). "
+                f"Totale: 2 x ({n - 1})! = 2 x {n_minus_1_fact} = {correct}."
+            ),
+            did_you_know=(
+                "Quando due persone devono stare vicine, si usa il trucco del 'blocco': "
+                "si considerano come un unico elemento, si contano le permutazioni "
+                "del gruppo ridotto e si moltiplica per i modi di ordinare il blocco."
+            ),
+        )
+
+    # Template CC3: Distinct digits greater than threshold (L3)
+    def _comb_digits_no_repeat(self, difficulty: int) -> dict:
+        pool = list(range(1, 10))
+        random.shuffle(pool)
+        digit_set = sorted(pool[:5])
+        k = 3
+
+        hundreds = [100, 200, 300, 400, 500]
+        valid_thresholds = []
+        for t in hundreds:
+            first_digit_min = t // 100
+            qualifying = [d for d in digit_set if d >= first_digit_min]
+            if 1 <= len(qualifying) <= 4:
+                valid_thresholds.append(t)
+
+        if not valid_thresholds:
+            valid_thresholds = [min(digit_set) * 100]
+        threshold = random.choice(valid_thresholds)
+        first_digit_min = threshold // 100
+
+        qualifying_first = [d for d in digit_set if d >= first_digit_min]
+        num_first = len(qualifying_first)
+        remaining_choices_second = len(digit_set) - 1
+        remaining_choices_third = len(digit_set) - 2
+        correct = num_first * remaining_choices_second * remaining_choices_third
+
+        digit_str = ", ".join(str(d) for d in digit_set)
+
+        total_no_constraint = len(digit_set) * (len(digit_set) - 1) * (len(digit_set) - 2)
+        with_rep = num_first * len(digit_set) * len(digit_set)
+        off_by_one_first = (num_first + 1) * remaining_choices_second * remaining_choices_third if num_first + 1 <= len(digit_set) else (num_first - 1) * remaining_choices_second * remaining_choices_third
+        off_by_one_first = max(off_by_one_first, 1)
+
+        distractors_candidates = [total_no_constraint, with_rep, off_by_one_first]
+        distractors = [c for c in distractors_candidates if c != correct and c > 0]
+        distractors = list(dict.fromkeys(distractors))[:4]
+        while len(distractors) < 4:
+            d = correct + random.choice([-3, -2, -1, 1, 2, 3]) * random.randint(1, 5)
+            if d > 0 and d != correct and d not in distractors:
+                distractors.append(d)
+
+        return self._build_int_result(
+            question=(
+                f"Quanti numeri di {k} cifre DISTINTE si possono formare con le cifre "
+                f"{{{digit_str}}} che siano maggiori di {threshold}?"
+            ),
+            correct_int=correct,
+            distractors_int=distractors[:4],
+            svg="",
+            explanation=(
+                f"Le cifre disponibili sono {{{digit_str}}}. "
+                f"La prima cifra deve essere >= {first_digit_min} (per avere numeri > {threshold}): "
+                f"{num_first} scelte {qualifying_first}. "
+                f"La seconda cifra: {remaining_choices_second} scelte (cifre restanti). "
+                f"La terza cifra: {remaining_choices_third} scelte. "
+                f"Totale: {num_first} x {remaining_choices_second} x {remaining_choices_third} = {correct}."
+            ),
+            did_you_know=(
+                "Nei problemi con cifre distinte e vincoli di grandezza, si parte dalla cifra "
+                "piu' significativa (quella con il vincolo) e si contano le possibilita' "
+                "per le posizioni successive usando le cifre rimanenti."
+            ),
+        )
+
+    # Template CC4: Committee selection with exclusion (L3)
+    def _comb_selection_exclusion(self, difficulty: int) -> dict:
+        n = random.randint(7, 10)
+        k = random.choice([3, 4])
+        names_pool = ["Marco", "Luca", "Sara", "Giulia", "Andrea", "Anna", "Giovanni", "Laura", "Paolo", "Elena"]
+        random.shuffle(names_pool)
+        name_a = names_pool[0]
+        name_b = names_pool[1]
+
+        total_comb = math.comb(n, k)
+        both_included = math.comb(n - 2, k - 2)
+        correct = total_comb - both_included
+
+        distractors_candidates = [
+            total_comb,
+            math.comb(n - 2, k),
+            total_comb - math.comb(n - 2, k),
+            total_comb - 1,
+        ]
+        distractors = [c for c in distractors_candidates if c != correct and c > 0]
+        distractors = list(dict.fromkeys(distractors))[:4]
+        while len(distractors) < 4:
+            d = correct + random.choice([-3, -2, -1, 1, 2, 3]) * random.randint(1, 5)
+            if d > 0 and d != correct and d not in distractors:
+                distractors.append(d)
+
+        return self._build_int_result(
+            question=(
+                f"Da un gruppo di {n} persone, in quanti modi si puo' scegliere un comitato "
+                f"di {k} persone se {name_a} e {name_b} non possono farne parte contemporaneamente?"
+            ),
+            correct_int=correct,
+            distractors_int=distractors[:4],
+            svg="",
+            explanation=(
+                f"Modi totali di scegliere {k} persone da {n}: C({n},{k}) = {total_comb}. "
+                f"Modi in cui {name_a} e {name_b} sono entrambi nel comitato: "
+                f"C({n - 2},{k - 2}) = {both_included} (scelgo i restanti {k - 2} da {n - 2}). "
+                f"Risposta: {total_comb} - {both_included} = {correct}."
+            ),
+            did_you_know=(
+                "Il principio di esclusione e' una tecnica potente: si conta il totale "
+                "e si sottrae cio' che viola il vincolo. E' spesso piu' semplice che "
+                "contare direttamente i casi ammessi."
             ),
         )

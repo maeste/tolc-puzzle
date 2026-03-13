@@ -1,3 +1,4 @@
+import math
 import random
 
 from exercises.base import Exercise
@@ -938,6 +939,196 @@ class WordModeler(Exercise):
         tip = "Quando due si avvicinano: tempo = distanza / (v1 + v2). Poi distanza_singolo = velocita * tempo."
         return question, str(correct), distractors, explanation, tip
 
+    # ---- New numeric templates (exam-style) ----
+
+    @staticmethod
+    def _numeric_bus_cost():
+        """Bus/vehicle rental cost split among group, requires rounding up."""
+        n_people = random.choice([23, 27, 31, 37, 43, 47, 53])
+        bus_capacity = random.choice([20, 25, 30, 40, 50])
+        bus_cost = random.choice([200, 250, 300, 350, 400, 450, 500])
+
+        n_buses = math.ceil(n_people / bus_capacity)
+        total_cost = n_buses * bus_cost
+
+        question = (
+            f"Un gruppo di {n_people} persone deve noleggiare dei pullman da {bus_capacity} posti "
+            f"al costo di {bus_cost}\u20ac ciascuno. "
+            f"Quanti pullman servono e quanto spende in totale il gruppo?"
+        )
+        correct = total_cost
+        distractors_raw = [
+            (n_buses - 1) * bus_cost if n_buses > 1 else bus_cost + 50,
+            n_people * bus_cost // max(bus_capacity, 1),
+            (n_buses + 1) * bus_cost,
+            n_people * bus_cost,
+        ]
+        offsets = [d - correct for d in distractors_raw if d != correct and d > 0][:4]
+        distractors = WordModeler._numeric_distractors(correct, offsets if len(offsets) >= 4 else None)
+
+        explanation = (
+            f"Servono {n_people}/{bus_capacity} = {n_people / bus_capacity:.1f} pullman, "
+            f"quindi bisogna arrotondare per eccesso: {n_buses} pullman. "
+            f"Costo totale: {n_buses} \u00d7 {bus_cost} = {total_cost}\u20ac."
+        )
+        tip = "Quando dividi persone in gruppi, arrotonda sempre per eccesso: non puoi lasciare nessuno a piedi!"
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_fraction_redistribution():
+        """Fraction of items given away, then fraction of remainder."""
+        name_a, name_b = _pick_two_names()
+        max_attempts = 200
+        for _ in range(max_attempts):
+            total = random.choice([24, 30, 36, 40, 48, 60])
+            frac_num1, frac_den1 = random.choice([(1, 3), (1, 4), (2, 5), (1, 6), (3, 4)])
+            if (total * frac_num1) % frac_den1 != 0:
+                continue
+            given_away = total * frac_num1 // frac_den1
+            remainder = total - given_away
+            frac_num2, frac_den2 = random.choice([(1, 2), (1, 3), (2, 3), (1, 4), (3, 4)])
+            if (remainder * frac_num2) % frac_den2 != 0:
+                continue
+            kept_by_a = remainder * frac_num2 // frac_den2
+            final_remainder = remainder - kept_by_a
+            if final_remainder > 0:
+                break
+        else:
+            # Fallback to guaranteed clean values
+            total, frac_num1, frac_den1 = 24, 1, 3
+            given_away = 8
+            remainder = 16
+            frac_num2, frac_den2 = 1, 2
+            kept_by_a = 8
+            final_remainder = 8
+
+        question = (
+            f"{name_a} ha {total} cioccolatini. Ne regala {frac_num1}/{frac_den1} a {name_b}. "
+            f"Di quelli rimasti, {name_a} ne mangia {frac_num2}/{frac_den2}. "
+            f"Quanti cioccolatini restano?"
+        )
+        correct = final_remainder
+        offsets = [
+            given_away - correct,
+            kept_by_a - correct,
+            remainder - correct,
+            total - correct - 1,
+        ]
+        distractors = WordModeler._numeric_distractors(correct, offsets)
+        explanation = (
+            f"{name_a} regala {frac_num1}/{frac_den1} di {total} = {given_away} cioccolatini. "
+            f"Ne restano {total} - {given_away} = {remainder}. "
+            f"Poi mangia {frac_num2}/{frac_den2} di {remainder} = {kept_by_a}. "
+            f"Restano {remainder} - {kept_by_a} = {final_remainder} cioccolatini."
+        )
+        tip = "Nei problemi con frazioni successive, calcola ogni passaggio separatamente sul resto aggiornato."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_percentage_multistep():
+        """X% of candidates passed. Y passed. How many total candidates?"""
+        perc_pass = random.choice([60, 65, 70, 75, 80, 85])
+        max_attempts = 200
+        for _ in range(max_attempts):
+            n_passed = random.randint(12, 50)
+            total_candidate = n_passed * 100 / perc_pass
+            if total_candidate == int(total_candidate) and total_candidate > n_passed:
+                total = int(total_candidate)
+                break
+        else:
+            # Fallback
+            perc_pass, n_passed, total = 80, 40, 50
+
+        n_failed = total - n_passed
+        question = (
+            f"All'esame di guida, il {perc_pass}% dei candidati ha superato la prova. "
+            f"Sapendo che {n_passed} persone hanno superato l'esame, "
+            f"quante persone in totale hanno sostenuto la prova?"
+        )
+        correct = total
+        offsets = [n_failed - correct, -n_passed, n_passed, -(total // 2)]
+        distractors = WordModeler._numeric_distractors(correct, offsets)
+        explanation = (
+            f"Se il {perc_pass}% corrisponde a {n_passed} persone, "
+            f"il totale \u00e8 {n_passed} \u00d7 100 / {perc_pass} = {total} persone."
+        )
+        tip = "Per trovare il totale da una percentuale: totale = parte \u00d7 100 / percentuale."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_exam_scores():
+        """Student average problem: find number of exams from old and new average."""
+        name = _pick_name()
+        max_attempts = 300
+        for _ in range(max_attempts):
+            old_avg = random.choice([22, 23, 24, 25, 26])
+            new_score = random.choice([28, 29, 30])
+            n_exams = random.randint(4, 10)
+            total_old = old_avg * n_exams
+            new_avg_num = total_old + new_score
+            new_avg_den = n_exams + 1
+            if new_avg_num % new_avg_den == 0:
+                new_avg = new_avg_num // new_avg_den
+                if new_avg > old_avg:
+                    break
+        else:
+            # Fallback: old_avg=24, new_score=30, n=5 => total_old=120, new=150/6=25
+            old_avg, new_score, n_exams, new_avg = 24, 30, 5, 25
+
+        question = (
+            f"{name} ha una media di {old_avg} punti su un certo numero di esami. "
+            f"Dopo aver preso {new_score} all'ultimo esame, la media sale a {new_avg}. "
+            f"Quanti esami aveva sostenuto prima dell'ultimo?"
+        )
+        correct = n_exams
+        distractors = WordModeler._numeric_distractors(correct, [-2, -1, 1, 2])
+        explanation = (
+            f"Se la media era {old_avg} su n esami, il totale era {old_avg}n. "
+            f"Dopo l'esame: ({old_avg}n + {new_score}) / (n + 1) = {new_avg}. "
+            f"Risolvendo: {old_avg}n + {new_score} = {new_avg}n + {new_avg}, "
+            f"quindi n({new_avg} - {old_avg}) = {new_score} - {new_avg}, "
+            f"n = {new_score - new_avg} / {new_avg - old_avg} = {n_exams}."
+        )
+        tip = "Media = somma / numero. Se conosci la nuova media e il nuovo voto, imposta l'equazione e risolvi per n."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_successive_operations():
+        """Multi-step: price increase then coupon then tax."""
+        original = random.choice([80, 100, 120, 150, 200])
+        increase_pct = random.choice([10, 15, 20, 25])
+        coupon = random.choice([5, 10, 15, 20])
+        tax_pct = random.choice([4, 10, 22])
+
+        after_increase = original * (100 + increase_pct) / 100
+        after_coupon = after_increase - coupon
+        final = after_coupon * (100 + tax_pct) / 100
+        final_rounded = round(final)
+
+        question = (
+            f"Un prodotto costa {original}\u20ac. Il prezzo aumenta del {increase_pct}%, "
+            f"poi viene applicato un buono sconto di {coupon}\u20ac, "
+            f"e infine si aggiunge l'IVA al {tax_pct}%. "
+            f"Qual \u00e8 il prezzo finale (arrotondato all'euro)?"
+        )
+        correct = final_rounded
+
+        wrong1 = round(original * (100 + increase_pct - tax_pct) / 100 - coupon)
+        wrong2 = round((original - coupon) * (100 + increase_pct + tax_pct) / 100)
+        wrong3 = round(original * (100 + increase_pct) / 100 * (100 + tax_pct) / 100)
+        wrong4 = final_rounded + random.choice([-3, -2, 2, 3])
+
+        offsets = [d - correct for d in [wrong1, wrong2, wrong3, wrong4] if d != correct][:4]
+        distractors = WordModeler._numeric_distractors(correct, offsets if len(offsets) >= 4 else None)
+
+        explanation = (
+            f"Aumento {increase_pct}%: {original} \u00d7 {1 + increase_pct / 100} = {after_increase:.2f}\u20ac. "
+            f"Buono: {after_increase:.2f} - {coupon} = {after_coupon:.2f}\u20ac. "
+            f"IVA {tax_pct}%: {after_coupon:.2f} \u00d7 {1 + tax_pct / 100} = {final:.2f}\u20ac \u2248 {final_rounded}\u20ac."
+        )
+        tip = "Nelle operazioni successive, applica ogni passaggio al risultato precedente, non al prezzo originale!"
+        return question, str(correct), distractors, explanation, tip
+
     # ================================================================
     #  Template registry by difficulty
     # ================================================================
@@ -986,15 +1177,20 @@ class WordModeler(Exercise):
             self._numeric_age_sum,
             self._numeric_discount,
             self._numeric_percentage_of,
+            self._numeric_bus_cost,
+            self._numeric_fraction_redistribution,
         ]
         level_2 = [
             self._numeric_average_add,
             self._numeric_work_rate,
             self._numeric_profit,
+            self._numeric_percentage_multistep,
+            self._numeric_exam_scores,
         ]
         level_3 = [
             self._numeric_system_ages,
             self._numeric_combined_distance,
+            self._numeric_successive_operations,
         ]
         if difficulty == 1:
             return level_1
@@ -1006,9 +1202,12 @@ class WordModeler(Exercise):
     def _get_templates(self, difficulty):
         return self._get_equation_templates(difficulty) + self._get_numeric_templates(difficulty)
 
-    def generate(self, difficulty: int) -> dict:
+    def generate(self, difficulty: int, exam_mode: bool = False) -> dict:
         difficulty = max(1, min(3, difficulty))
-        templates = self._get_templates(difficulty)
+        if exam_mode and random.random() < 0.6:
+            templates = self._get_numeric_templates(difficulty)
+        else:
+            templates = self._get_templates(difficulty)
         template_fn = random.choice(templates)
         question, correct_eq, distractors, explanation, tip = template_fn()
         return self._build_result(question, correct_eq, distractors, explanation, tip, difficulty)

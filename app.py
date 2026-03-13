@@ -19,40 +19,44 @@ EXERCISE_TYPES = {
     "always_true": {"name": "Sempre o Mai Vero?", "icon": "🤔", "desc": "Ragiona su proprietà matematiche: sempre, mai o talvolta vere?"},
     "proportional": {"name": "Ragionamento Proporzionale", "icon": "🔄", "desc": "Ragiona su come cambiano le grandezze in una formula"},
     "cross_topic": {"name": "Domande Trasversali", "icon": "🔗", "desc": "Domande che combinano più aree tematiche"},
+    "number_sense": {"name": "Senso Numerico", "icon": "🔢", "desc": "Percentuali, frazioni, potenze e notazione scientifica"},
+    "which_satisfies": {"name": "Quale Soddisfa?", "icon": "🎯", "desc": "Identifica quale oggetto matematico soddisfa una proprietà"},
 }
 
 exercise_registry = {}
 
 # TOLC-B Realistic Exam Question Distribution (20 questions total)
-# Weighted to approximate actual TOLC-B exam category frequencies.
+# Based on analysis of 40 real TOLC-B questions.
 #
 # Category breakdown:
-#   Algebra (~30%):           solve (3) + inequalities (2) + trap (1) = 6 questions
-#   Geometria (~20%):         geometry (2) + analytic_geo (2)         = 4 questions
-#   Funzioni/Grafici (~20%):  word (2) + graph (2)                   = 4 questions
-#   Probabilita (~15%):       probability (3)                        = 3 questions
-#   Statistica/Logica (~15%): statistics (2) + logic (1)             = 3 questions
-#                                                               Total = 20 questions
+#   Aritmetica/Numeri (~15%):  number_sense (3)                        = 3 questions
+#   Algebra (~20%):            solve (2) + inequalities (1) + simpl(1) = 4 questions
+#   Geometria (~20%):          geometry (2) + analytic_geo (2)         = 4 questions
+#   Funzioni/Grafici (~20%):   word (2) + graph (2)                   = 4 questions
+#   Meta-ragionamento (~10%):  which_satisfies (2)                     = 2 questions
+#   Prob+Stat+Logica (~15%):   probability (1) + statistics (1) + logic(1) = 3 questions
+#                                                                 Total = 20 questions
 #
-# Excluded types:
-#   estimation -- requires special handling not yet implemented
+# Excluded types (still available in learning mode via EXERCISE_TYPES):
+#   estimation   -- requires special handling not yet implemented
+#   trap         -- format doesn't exist in real TOLC-B
+#   always_true  -- competency embedded in other question types
+#   proportional -- competency embedded in other question types
+#   cross_topic  -- integration happens naturally in real TOLC-B
 REALISTIC_EXAM_WEIGHTS = {
-    "solve": 2,           # Algebra (primary)
-    "inequalities": 2,    # Algebra
-    "trap": 1,            # Algebra (common-mistake recognition)
-    "simplification": 1,  # Semplificazione espressioni (TOLC-31)
-    "always_true": 1,     # Ragionamento teorico (TOLC-32)
-    "proportional": 1,    # Ragionamento proporzionale (TOLC-34)
-    "geometry": 2,        # Geometria (SVG)
-    "analytic_geo": 1,    # Geometria analitica
-    "word": 1,            # Funzioni / word problems
-    "probability": 2,     # Probabilita
-    "statistics": 1,      # Statistica
-    "logic": 1,           # Logica
-    "graph": 2,           # Grafici di funzioni (SVG) -- TOLC-25
-    "cross_topic": 2,     # Domande trasversali (TOLC-36)
+    "number_sense": 3,     # Aritmetica pura (~15%)
+    "solve": 2,            # Algebra: equazioni
+    "inequalities": 1,     # Algebra: disequazioni
+    "simplification": 1,   # Algebra: semplificazione espressioni
+    "which_satisfies": 2,  # Meta-formato "quale soddisfa?" (~10%)
+    "geometry": 2,         # Geometria euclidea (SVG)
+    "analytic_geo": 2,     # Geometria analitica
+    "word": 2,             # Word problems
+    "probability": 1,      # Probabilità
+    "statistics": 1,       # Statistica
+    "logic": 1,            # Logica
+    "graph": 2,            # Grafici di funzioni (SVG)
 }
-# Sanity check: sum = 2+2+1+1+1+1+2+1+1+2+1+1+2+2 = 20
 
 
 def register_exercise(type_key, cls):
@@ -103,6 +107,12 @@ register_exercise("proportional", ProportionalReasoning)
 
 from exercises.cross_topic import CrossTopicExercise
 register_exercise("cross_topic", CrossTopicExercise)
+
+from exercises.number_sense import NumberSense
+register_exercise("number_sense", NumberSense)
+
+from exercises.which_satisfies import WhichSatisfies
+register_exercise("which_satisfies", WhichSatisfies)
 
 
 @app.route("/")
@@ -206,7 +216,10 @@ def api_realistic_exam_exercises():
     for ex_type in exam_types:
         difficulty = _random.choice([1, 2, 2, 2, 3])
         ex = exercise_registry[ex_type]()
-        data = ex.generate(difficulty)
+        if ex_type == "word":
+            data = ex.generate(difficulty, exam_mode=True)
+        else:
+            data = ex.generate(difficulty)
         data["type"] = ex_type
         data["difficulty"] = difficulty
         # Keep graph_data when present (SVG rendered client-side)

@@ -52,6 +52,72 @@ class TestRealisticExamWeightsConfig:
             "graph type should be included for TOLC-B Funzioni/Grafici category"
         )
 
+    def test_learning_mode_types_excluded_from_exam(self):
+        """Types kept for learning mode only should not appear in exam weights."""
+        learning_only = ["trap", "always_true", "proportional", "cross_topic"]
+        for ex_type in learning_only:
+            assert ex_type not in REALISTIC_EXAM_WEIGHTS, (
+                f"'{ex_type}' should be excluded from realistic exam weights "
+                f"(learning mode only)"
+            )
+
+    def test_learning_mode_types_still_in_exercise_types(self):
+        """Learning-only types must remain in EXERCISE_TYPES for practice mode."""
+        learning_only = ["trap", "always_true", "proportional", "cross_topic"]
+        for ex_type in learning_only:
+            assert ex_type in EXERCISE_TYPES, (
+                f"'{ex_type}' must stay in EXERCISE_TYPES for learning mode"
+            )
+
+    def test_learning_mode_types_still_registered(self):
+        """Learning-only types must still have registered exercise classes."""
+        learning_only = ["trap", "always_true", "proportional", "cross_topic"]
+        for ex_type in learning_only:
+            assert ex_type in exercise_registry, (
+                f"'{ex_type}' must stay registered for learning mode"
+            )
+
+    def test_new_types_included(self):
+        """number_sense and which_satisfies must be in exam weights."""
+        assert "number_sense" in REALISTIC_EXAM_WEIGHTS
+        assert "which_satisfies" in REALISTIC_EXAM_WEIGHTS
+
+    def test_estimation_and_learning_types_excluded(self):
+        """All excluded types must not appear in exam weights."""
+        excluded = ["estimation", "trap", "always_true", "proportional", "cross_topic"]
+        for ex_type in excluded:
+            assert ex_type not in REALISTIC_EXAM_WEIGHTS, (
+                f"'{ex_type}' should not be in REALISTIC_EXAM_WEIGHTS"
+            )
+
+    def test_category_distribution_matches_tolc(self):
+        """Validate category percentages within +-5% of target distribution."""
+        total = sum(REALISTIC_EXAM_WEIGHTS.values())
+        categories = {
+            "Aritmetica/Numeri": ["number_sense"],
+            "Algebra": ["solve", "inequalities", "simplification"],
+            "Geometria": ["geometry", "analytic_geo"],
+            "Funzioni/Grafici": ["word", "graph"],
+            "Meta-ragionamento": ["which_satisfies"],
+            "Prob+Stat+Logica": ["probability", "statistics", "logic"],
+        }
+        expected_pct = {
+            "Aritmetica/Numeri": 15,
+            "Algebra": 20,
+            "Geometria": 20,
+            "Funzioni/Grafici": 20,
+            "Meta-ragionamento": 10,
+            "Prob+Stat+Logica": 15,
+        }
+        for cat_name, types in categories.items():
+            cat_count = sum(REALISTIC_EXAM_WEIGHTS.get(t, 0) for t in types)
+            actual_pct = (cat_count / total) * 100
+            target_pct = expected_pct[cat_name]
+            assert abs(actual_pct - target_pct) <= 5, (
+                f"Category '{cat_name}': {actual_pct:.1f}% vs target {target_pct}% "
+                f"(exceeds +-5% tolerance)"
+            )
+
 
 class TestRealisticExamEndpoint:
     """Test the /api/realistic-exam/exercises endpoint."""
