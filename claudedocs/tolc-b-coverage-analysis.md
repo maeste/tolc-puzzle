@@ -1,13 +1,13 @@
 # Analisi Critica di Copertura TOLC-B
 
 > **Documento di tracciamento** — da aggiornare man mano che le lacune vengono risolte.
-> Ultima revisione strutturale: 2026-03-12 (rivalutazione v2 post-TOLC-25→29)
+> Ultima revisione strutturale: 2026-03-13 (Assessment v3 — TOLC-37 post competenze cognitive)
 
 ---
 
 ## 1. Panoramica
 
-Il TOLC-B Puzzle copre **tutte le 8 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **51 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base). Tutte le lacune identificate nell'analisi iniziale sono state risolte. Implementazioni recenti (TOLC-25→29): grafici SVG nella simulazione esame, distribuzione pesata domande, geometria solida/volumi, potenze con esponente razionale, word problems con risultato numerico. **127 template** distribuiti su 15 moduli, **631 test** automatizzati.
+Il TOLC-B Puzzle copre **tutte le 8 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **57 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 6 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni TOLC-31→36: semplificazione espressioni, ragionamento teorico, lettura grafici inversa, ragionamento proporzionale, geometria cerchio avanzata, domande cross-topic. **~138 template** distribuiti su **15 moduli**, **631 test** automatizzati. Assessment v3 (§9): copertura domande reali Alpha Test dal 35% al 75%.
 
 ### Legenda Stati
 
@@ -137,12 +137,13 @@ Il TOLC-B Puzzle copre **tutte le 8 macro-aree** del syllabus CISIA per la sezio
 | Stato | Conteggio | Percentuale |
 |-------|-----------|-------------|
 | COPERTO | 34 | 60% |
-| IMPLEMENTATO | 27 | 40% |
+| IMPLEMENTATO | 23 | 40% |
 | PARZIALE | 0 | 0% |
 | ASSENTE | 0 | 0% |
 | EXTRA | 4 | — |
 
 **Copertura effettiva syllabus**: **100%** (57/57 argomenti coperti o implementati, esclusi 4 EXTRA)
+**Copertura competenze cognitive**: 7/7 competenze coperte (§2.9)
 
 ### Inventario Template (127 totali)
 
@@ -235,6 +236,7 @@ Il TOLC-B Puzzle copre **tutte le 8 macro-aree** del syllabus CISIA per la sezio
 | 2026-03-12 | TOLC-31 | Creato modulo `exercises/simplification.py` con classe `SimplificationExercise`: 10 template semplificazione espressioni (potenze negative, raccoglimento, potenze di potenze, somma frazioni, logaritmi, prodotti notevoli, frazioni algebriche, radicali nested, frazioni composte, log+exp misti). Formato "L'espressione X è uguale a:" con 5 opzioni. Distrattori basati su errori comuni. Test: `tests/test_simplification.py` (43 test). | Claude |
 | 2026-03-12 | TOLC-32 | Creato modulo `exercises/always_true.py` con classe `AlwaysTrueExercise`: 8 template ragionamento teorico (quadrato binomio, distribuzione frazioni, radice somma, AM-GM, valore assoluto, potenze e ordine, divisibilità, logaritmi e ordine). Formato "Sempre/Mai/Talvolta vero" con controesempi espliciti. Test: `tests/test_always_true.py` (40 test). | Claude |
 | 2026-03-12 | TOLC-34 | Creato modulo `exercises/proportional_reasoning.py` con classe `ProportionalReasoning`: 6 template ragionamento proporzionale (diretto, inverso, quadratico, percentuali composte, variazione parametri, variazione combinata). Formule fisiche/geometriche reali. Test: `tests/test_proportional_reasoning.py` (13 test). | Claude |
+| 2026-03-13 | TOLC-37 | Assessment v3 (§9): rianalisi 20 domande Alpha Test vs app aggiornata. Copertura per competenza cognitiva dal 35% al 75%. 8 domande passate da NON COPERTO a COPERTO grazie a TOLC-31→36. Gap residui: 2 domande (parabola, sviluppo cono) — priorità bassa. Aggiornati §1, §3, §7.2 con nuove metriche. | Claude |
 
 ---
 
@@ -267,16 +269,17 @@ Il TOLC-B Puzzle copre **tutte le 8 macro-aree** del syllabus CISIA per la sezio
 
 ### 7.2 Percentuali Aggregate
 
-| Metrica | Baseline | Post R1-R9 | Post R10-R14 (attuale) |
-|---------|----------|------------|------------------------|
-| Argomenti coperti | 34/49 (69%) | 49/49 (100%) | 51/51 (100%) |
-| Macro-aree complete | 4/8 (50%) | 8/8 (100%) | 8/8 (100%) |
-| Moduli esercizi | 9 | 11 | 11 |
-| Template totali | ~70 | ~80 | **88** (conteggio esatto) |
-| Test automatizzati | — | 171 | **442** |
-| Simulazione: distribuzione | uniforme | uniforme | **pesata TOLC-B** |
-| Simulazione: grafici SVG | no | no | **4 domande su 20** |
-| Simulazione: competenze cognitive | no | no | **5 domande su 20** (semplificazione, sempre/mai vero, proporzionale, 2 cross-topic) |
+| Metrica | Baseline | Post R1-R9 | Post R10-R14 | Post TOLC-31→36 (attuale) |
+|---------|----------|------------|--------------|---------------------------|
+| Argomenti coperti | 34/49 (69%) | 49/49 (100%) | 51/51 (100%) | 57/57 (100%) |
+| Macro-aree complete | 4/8 (50%) | 8/8 (100%) | 8/8 (100%) | 9/9 (100%) |
+| Moduli esercizi | 9 | 11 | 11 | **15** |
+| Template totali | ~70 | ~80 | 88 | **~138** |
+| Test automatizzati | — | 171 | 442 | **631** |
+| Simulazione: distribuzione | uniforme | uniforme | pesata TOLC-B | **pesata TOLC-B + cognitive** |
+| Simulazione: grafici SVG | no | no | 4 domande su 20 | **4 domande su 20** |
+| Simulazione: competenze cognitive | no | no | 0 domande | **7 domande su 20** |
+| Copertura domande reali Alpha Test | — | — | 35% | **75%** (§9) |
 
 ### 7.3 Argomenti Ancora Scoperti
 
@@ -324,3 +327,92 @@ Le sezioni TOLC-B **non coperte dall'app** (Biologia, Chimica, Fisica, Comprensi
 2. **Difficoltà adattiva**: implementare selezione difficoltà basata sulle performance dello studente
 3. **Spiegazioni interattive**: aggiungere passaggi intermedi cliccabili nelle spiegazioni
 4. **Statistiche per argomento**: mostrare allo studente i punti deboli per macro-area TOLC-B
+
+---
+
+## 9. Assessment v3 — Copertura per Competenza Cognitiva (TOLC-37)
+
+> Rivalutazione eseguita il 2026-03-13 dopo il completamento di TOLC-31 → TOLC-36.
+> Metodologia: le stesse 20 domande Alpha Test ("Nona Prova") usate nell'analisi iniziale
+> vengono confrontate con l'app aggiornata. Valutazione per COMPETENZA COGNITIVA, non solo per argomento.
+
+### 9.1 Confronto Domanda per Domanda: Prima vs Dopo
+
+| # | Domanda Alpha Test | Competenza Cognitiva | Prima (v2) | Dopo (v3) | Modulo Coprente |
+|---|---|---|---|---|---|
+| Q1 | log₁₀60 / log₁₀√10 = ? | Semplificazione espressione | PARZIALE | **COPERTO** | Simplification (`_t2_log_simplification`) |
+| Q2 | Prob. prime 4 carte siano donne | Calcolo probabilità | COPERTO | COPERTO | Probability Game |
+| Q3 | (2ab-b²-a²)·(b-a) = ? | Fattorizzazione / prodotto notevole | NON COPERTO | **COPERTO** | Simplification (`_t2_notable_products`) |
+| Q4 | Intersezione curva 2y²=3x+8 con asse y | Geom. analitica — coniche | NON COPERTO | NON COPERTO | — (parabola non implementata) |
+| Q5 | Cerchio tangente da punto esterno + trig | Cross-topic geom+trig | NON COPERTO | **PARZIALE** | Geometry Sherlock (cerchio avanzato) + Cross Topic (`_t3_trig_geometry`) — ma manca tangente da punto esterno specifico |
+| Q6 | Equazione asse segmento P(0,6) Q(8,0) | Geometria analitica | COPERTO | COPERTO | Analytic Geometry |
+| Q7 | √((√(a²+4)-2)(√(a²+4)+2)) | Semplificazione radicali nested | NON COPERTO | **COPERTO** | Simplification (`_t3_nested_radicals`) |
+| Q8 | x²/2 + 3x + 2 = 0, soluzione maggiore | Equazione quadratica | COPERTO | COPERTO | Solve Exercise |
+| Q9 | (a/b+c/d)/(b/d+a/c) semplificazione | Semplificazione frazioni algebriche | NON COPERTO | **COPERTO** | Simplification (`_t2_algebraic_fractions`, `_t3_compound_algebraic`) |
+| Q10 | 10⁹ + 10⁸ + 10⁹ = ? | Raccoglimento fattore comune | PARZIALE | **COPERTO** | Simplification (`_t1_common_factor`) |
+| Q11 | a/b + b/a ≥ 2 sempre vero? | Ragionamento teorico (AM-GM) | NON COPERTO | **COPERTO** | Always True (`_t2_am_gm`) |
+| Q12 | a=2b/c², raddoppi b, cosa fai a c? | Ragionamento proporzionale | NON COPERTO | **COPERTO** | Proportional Reasoning (`_t3_parameter_variation`) |
+| Q13 | Triangoli simili rapporto 3, rapporto aree | Geometria similitudine | COPERTO | COPERTO | Geometry Sherlock |
+| Q14 | Settore circolare → sviluppo cono, raggio base | Geometria 3D avanzata | NON COPERTO | **PARZIALE** | Geometry Sherlock (solidi + cerchio avanzato: `_t3_arc_length`) — ma manca sviluppo superficie laterale specifico |
+| Q15 | Corda, distanza dal centro, tangente angolo inscritto | Cerchio avanzato | NON COPERTO | **COPERTO** | Geometry Sherlock (`_t2_inscribed_angle`, `_t2_chord_distance`) |
+| Q16 | Frazione generatrice di 0,75 | Aritmetica base | IMPLICITO | IMPLICITO | Troppo semplice per template dedicato |
+| Q17 | (2⁻¹+2⁻²)/(2⁻³-2⁻⁴) | Semplificazione esponenti negativi | PARZIALE | **COPERTO** | Simplification (`_t1_negative_exponents`) |
+| Q18 | Dal grafico, trovare tutti a t.c. f(3)=f(a) | Lettura grafico inversa | NON COPERTO | **COPERTO** | Graph Reader (`_template_inverse_preimage`) |
+| Q19 | Negazione logica complessa | Logica | COPERTO | COPERTO | Logic Puzzle |
+| Q20 | Lettura grafico a barre, rapporto tra categorie | Statistica | COPERTO | COPERTO | Statistics Exercise |
+
+### 9.2 Conteggio Copertura: Prima vs Dopo
+
+| Stato | Prima (v2) | Dopo (v3) | Delta |
+|-------|------------|-----------|-------|
+| **COPERTO** | 7/20 (35%) | **15/20 (75%)** | **+8** |
+| **PARZIALE** | 3/20 (15%) | 2/20 (10%) | -1 |
+| **NON COPERTO** | 10/20 (50%) | 2/20 (10%) | **-8** |
+| **IMPLICITO** | 0 (contato come parziale) | 1/20 (5%) | — |
+
+**Miglioramento netto**: dal 35% al 75% di copertura piena sulle domande reali Alpha Test.
+
+### 9.3 Copertura per Competenza Cognitiva
+
+| Competenza Cognitiva | Domande Alpha Test | Prima | Dopo | Modulo |
+|---|---|---|---|---|
+| Risolvi/Calcola | Q2, Q6, Q8, Q13, Q19, Q20 | 6/6 (100%) | 6/6 (100%) | Solve, Probability, Analytic Geo, Geometry, Logic, Statistics |
+| Semplifica/Identifica equivalente | Q1, Q3, Q7, Q9, Q10, Q17 | 0/6 (0%) | **6/6 (100%)** | Simplification (TOLC-31) |
+| Sempre/Mai vero | Q11 | 0/1 (0%) | **1/1 (100%)** | Always True (TOLC-32) |
+| Leggi il grafico (inverso) | Q18 | 0/1 (0%) | **1/1 (100%)** | Graph Reader inverse (TOLC-33) |
+| Ragiona su proporzionalità | Q12 | 0/1 (0%) | **1/1 (100%)** | Proportional Reasoning (TOLC-34) |
+| Geometria avanzata (cerchio) | Q5, Q14, Q15 | 0/3 (0%) | **1/3 pieno + 2/3 parziale** | Geometry Sherlock circle (TOLC-35) |
+| Cross-topic | Q4, Q5 | 0/2 (0%) | **0/2 pieno + 1/2 parziale** | Cross Topic (TOLC-36) — parabola non coperta |
+
+### 9.4 Analisi dei Gap Residui
+
+Restano **2 domande NON COPERTE** e **2 PARZIALI**:
+
+| # | Domanda | Gap Residuo | Priorità | Motivazione |
+|---|---|---|---|---|
+| Q4 | Intersezione curva 2y²=3x+8 con asse y | Coniche (parabola) in geometria analitica | **Bassa** | Raro nel TOLC-B; retta e circonferenza dominano. Richiederebbe un modulo coniche dedicato per ROI minimo. |
+| Q5 | Tangente da punto esterno + trigonometria | Tangente specifica da punto esterno | **Bassa** | Coperto parzialmente (angolo inscritto + trig+geom cross-topic), ma il sotto-caso specifico "tangente da punto esterno" manca. Template aggiuntivo in Geometry Sherlock potrebbe coprirlo. |
+| Q14 | Sviluppo superficie laterale cono | Sviluppo superfici 3D | **Molto bassa** | Caso molto specifico e raro. Abbiamo arco, cono, compositi — lo sviluppo della superficie laterale è un sotto-caso troppo di nicchia. |
+| Q16 | Frazione generatrice di 0,75 | Aritmetica elementare | **Nessuna** | Troppo banale per giustificare un template. Lo studente che usa l'app ha già queste competenze. |
+
+### 9.5 Valutazione Realismo Simulazione Esame: Prima vs Dopo
+
+| Aspetto | Prima (v2) | Dopo (v3) | Note |
+|---|---|---|---|
+| Formato (20q/50min/5opt) | 10/10 | 10/10 | Invariato |
+| Punteggio (+1/0/-0.25) | 10/10 | 10/10 | Invariato |
+| Navigazione domande | 8/10 | 8/10 | Invariato (TOLC reale non permette tornare indietro tra sezioni) |
+| Distribuzione argomenti | 7/10 | **8/10** | Migliorata con competenze cognitive nella distribuzione |
+| Stile domande | 5/10 | **8/10** | 7 domande su 20 ora testano competenze cognitive (semplifica, ragiona, analizza grafico) |
+| Difficoltà | 6/10 | **7/10** | Cross-topic e geometria avanzata alzano il livello |
+| Distrattori | 7/10 | **8/10** | Simplification genera distrattori basati su errori comuni reali |
+| Utilità per preparazione | 7/10 | **8/10** | Ora copre sia fondamenta che competenze richieste dal TOLC reale |
+
+**GIUDIZIO COMPLESSIVO v3**: L'app è ora un buon strumento di preparazione che copre il 75% delle domande reali TOLC-B per competenza cognitiva. Resta insufficiente per coniche (parabola/ellisse) e sviluppo superfici 3D, ma questi sono casi rari. Lo studente che usa la nostra app sarà preparato sulla maggior parte delle tipologie di domande del TOLC-B reale, ma dovrebbe comunque integrare con almeno 2-3 simulazioni ufficiali CISIA per familiarizzarsi con i casi limite.
+
+### 9.6 Raccomandazioni Post-Assessment
+
+1. **Gap residui non prioritari**: Q4 (parabola) e Q14 (sviluppo cono) non giustificano implementazione per il basso ROI
+2. **Possibile miglioramento incrementale**: aggiungere template "tangente da punto esterno" in Geometry Sherlock per coprire Q5 completamente (effort: basso, 1 template)
+3. **Priorità futura**: aumentare la varietà dei template esistenti piuttosto che aggiungere nuovi tipi — la ripetitività è ora il rischio principale per l'esperienza utente
+4. **Validazione con studenti reali**: il prossimo passo più utile sarebbe testare l'app con 5-10 studenti TOLC-B e raccogliere feedback qualitativo
