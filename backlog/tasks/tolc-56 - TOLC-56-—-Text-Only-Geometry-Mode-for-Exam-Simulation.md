@@ -1,9 +1,10 @@
 ---
 id: TOLC-56
 title: TOLC-56 — Text-Only Geometry Mode for Exam Simulation
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-13 11:27'
+updated_date: '2026-03-13 13:24'
 labels:
   - gap-G8
   - geometry

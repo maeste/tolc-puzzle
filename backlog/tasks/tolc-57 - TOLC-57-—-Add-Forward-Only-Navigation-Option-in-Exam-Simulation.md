@@ -1,9 +1,10 @@
 ---
 id: TOLC-57
 title: TOLC-57 — Add Forward-Only Navigation Option in Exam Simulation
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-13 11:28'
+updated_date: '2026-03-13 13:24'
 labels:
   - gap-G9
   - exam-simulation

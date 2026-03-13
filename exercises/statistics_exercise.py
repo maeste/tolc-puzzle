@@ -60,13 +60,22 @@ def _make_distractors(correct, count=4):
             if formatted != correct_str:
                 distractors.add(formatted)
 
-    # Fallback
+    # Fallback — use additive offsets to handle correct=0 safely
+    fallback_iter = 0
     while len(distractors) < count:
-        d = round(correct * random.uniform(0.5, 1.8), 2)
+        fallback_iter += 1
+        if abs(correct) < 0.01:
+            d = round(random.uniform(0.5, 10.0), 2)
+        else:
+            d = round(correct * random.uniform(0.5, 1.8), 2)
         if d > 0:
             formatted = _fmt(d)
             if formatted != correct_str:
                 distractors.add(formatted)
+        if fallback_iter > 500:
+            while len(distractors) < count:
+                distractors.add(_fmt(round(len(distractors) + 1.0, 2)))
+            break
 
     return list(distractors)[:count]
 

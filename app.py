@@ -21,6 +21,7 @@ EXERCISE_TYPES = {
     "cross_topic": {"name": "Domande Trasversali", "icon": "🔗", "desc": "Domande che combinano più aree tematiche"},
     "number_sense": {"name": "Senso Numerico", "icon": "🔢", "desc": "Percentuali, frazioni, potenze e notazione scientifica"},
     "which_satisfies": {"name": "Quale Soddisfa?", "icon": "🎯", "desc": "Identifica quale oggetto matematico soddisfa una proprietà"},
+    "composition": {"name": "Composizione di Funzioni", "icon": "🔗", "desc": "Esercizi sulla composizione f(g(x)), decomposizione e dominio"},
 }
 
 exercise_registry = {}
@@ -29,33 +30,34 @@ exercise_registry = {}
 # Based on analysis of 40 real TOLC-B questions.
 #
 # Category breakdown:
-#   Aritmetica/Numeri (~15%):  number_sense (3)                        = 3 questions
+#   Aritmetica/Numeri (~15%):  number_sense (2) + estimation (1)       = 3 questions
 #   Algebra (~20%):            solve (2) + inequalities (1) + simpl(1) = 4 questions
 #   Geometria (~20%):          geometry (2) + analytic_geo (2)         = 4 questions
-#   Funzioni/Grafici (~20%):   word (2) + graph (2)                   = 4 questions
+#   Funzioni/Grafici (~20%):   word (1) + graph (2) + composition (1) = 4 questions
 #   Meta-ragionamento (~10%):  which_satisfies (2)                     = 2 questions
 #   Prob+Stat+Logica (~15%):   probability (1) + statistics (1) + logic(1) = 3 questions
 #                                                                 Total = 20 questions
 #
 # Excluded types (still available in learning mode via EXERCISE_TYPES):
-#   estimation   -- requires special handling not yet implemented
 #   trap         -- format doesn't exist in real TOLC-B
 #   always_true  -- competency embedded in other question types
 #   proportional -- competency embedded in other question types
 #   cross_topic  -- integration happens naturally in real TOLC-B
 REALISTIC_EXAM_WEIGHTS = {
-    "number_sense": 3,     # Aritmetica pura (~15%)
+    "number_sense": 2,     # Aritmetica pura
     "solve": 2,            # Algebra: equazioni
     "inequalities": 1,     # Algebra: disequazioni
     "simplification": 1,   # Algebra: semplificazione espressioni
     "which_satisfies": 2,  # Meta-formato "quale soddisfa?" (~10%)
     "geometry": 2,         # Geometria euclidea (SVG)
     "analytic_geo": 2,     # Geometria analitica
-    "word": 2,             # Word problems
+    "word": 1,             # Word problems
+    "composition": 1,      # Composizione di funzioni
     "probability": 1,      # Probabilità
     "statistics": 1,       # Statistica
     "logic": 1,            # Logica
     "graph": 2,            # Grafici di funzioni (SVG)
+    "estimation": 1,       # Stima ordini di grandezza
 }
 
 
@@ -113,6 +115,9 @@ register_exercise("number_sense", NumberSense)
 
 from exercises.which_satisfies import WhichSatisfies
 register_exercise("which_satisfies", WhichSatisfies)
+
+from exercises.function_composition import FunctionComposition
+register_exercise("composition", FunctionComposition)
 
 
 @app.route("/")
@@ -186,7 +191,10 @@ def api_simulation_exercises():
     for ex_type in distribution:
         difficulty = _random.randint(1, 3)
         ex = exercise_registry[ex_type]()
-        data = ex.generate(difficulty)
+        if ex_type == "geometry":
+            data = ex.generate(difficulty, text_only=True)
+        else:
+            data = ex.generate(difficulty)
         data["type"] = ex_type
         data["difficulty"] = difficulty
         exercises.append(data)
@@ -216,8 +224,10 @@ def api_realistic_exam_exercises():
     for ex_type in exam_types:
         difficulty = _random.choice([1, 2, 2, 2, 3])
         ex = exercise_registry[ex_type]()
-        if ex_type == "word":
+        if ex_type in ("word", "estimation"):
             data = ex.generate(difficulty, exam_mode=True)
+        elif ex_type == "geometry":
+            data = ex.generate(difficulty, text_only=True)
         else:
             data = ex.generate(difficulty)
         data["type"] = ex_type

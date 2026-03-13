@@ -35,6 +35,48 @@ def _distractor(correct, spread=None, count=4):
     return list(distractors)[:count]
 
 
+def _distractor_signed(correct, spread=None, count=4):
+    """Generate plausible numeric distractors that can be negative or zero.
+
+    Used for transformation exercises where answers may be negative.
+    """
+    if spread is None:
+        spread = max(2.0, abs(correct) * 0.4)
+    distractors = set()
+    correct_formatted = _fmt(correct)
+    attempts = 0
+    while len(distractors) < count and attempts < 300:
+        attempts += 1
+        offset = random.uniform(-spread, spread)
+        d = round(correct + offset, 2)
+        if abs(d - correct) > 0.01:
+            formatted = _fmt(d)
+            if formatted != correct_formatted:
+                distractors.add(formatted)
+    # Common sign-error distractors as fallback
+    sign_variants = [
+        -correct,
+        correct + 1,
+        correct - 1,
+        correct * 2,
+        -correct + 1,
+        -correct - 1,
+    ]
+    for sv in sign_variants:
+        if len(distractors) >= count:
+            break
+        formatted = _fmt(sv)
+        if formatted != correct_formatted:
+            distractors.add(formatted)
+    # final fallback
+    while len(distractors) < count:
+        d = round(correct + random.uniform(-10, 10), 2)
+        formatted = _fmt(d)
+        if formatted != correct_formatted:
+            distractors.add(formatted)
+    return list(distractors)[:count]
+
+
 # ---------------------------------------------------------------------------
 # SVG helpers
 # ---------------------------------------------------------------------------
@@ -578,14 +620,16 @@ def _t3_midpoint_and_distance():
 
 def _t3_triangle_area_coordinates():
     """Find area of triangle given three vertices using the coordinate formula."""
-    x1, y1 = random.randint(-3, 3), random.randint(-3, 3)
-    x2, y2 = random.randint(-3, 3), random.randint(-3, 3)
-    x3, y3 = random.randint(-3, 3), random.randint(-3, 3)
-    area = abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2
-    while area < 1:
-        x3 = random.randint(-3, 3)
-        y3 = random.randint(-3, 3)
+    for _attempt in range(200):
+        x1, y1 = random.randint(-3, 3), random.randint(-3, 3)
+        x2, y2 = random.randint(-3, 3), random.randint(-3, 3)
+        x3, y3 = random.randint(-3, 3), random.randint(-3, 3)
         area = abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2
+        if area >= 1:
+            break
+    else:
+        x1, y1, x2, y2, x3, y3 = 0, 0, 3, 0, 0, 4
+        area = 6.0
 
     ox, oy = 150, 130
     scale = 18
@@ -1346,6 +1390,860 @@ def _t3_power_of_point():
     return question, float(pd), svg, explanation, tip
 
 
+# ---------------------------------------------------------------------------
+# SVG helper for coordinate-plane based transformations
+# ---------------------------------------------------------------------------
+
+def _svg_coordinate_plane(width=300, height=300, scale=15, origin=None):
+    """Return SVG header with coordinate axes drawn.
+
+    Returns (svg_string, ox, oy, scale) where ox/oy is the pixel position
+    of the mathematical origin.
+    """
+    ox = width // 2 if origin is None else origin[0]
+    oy = height // 2 if origin is None else origin[1]
+    svg = _svg_start(width, height)
+    # axes
+    svg += _svg_line(10, oy, width - 10, oy, color="#ccc", width=1)
+    svg += _svg_line(ox, 10, ox, height - 10, color="#ccc", width=1)
+    # axis labels
+    svg += _svg_text(width - 12, oy - 6, "x", color="#999", size=11)
+    svg += _svg_text(ox + 8, 14, "y", color="#999", size=11)
+    return svg, ox, oy, scale
+
+
+def _svg_point(ox, oy, scale, x, y, label, color="#2a9d8f", r=4):
+    """Draw a point on the coordinate plane."""
+    px = ox + x * scale
+    py = oy - y * scale
+    svg = f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{r}" fill="{color}"/>'
+    svg += _svg_text(px + 10, py - 8, label, color=color, bold=True, size=11)
+    return svg
+
+
+def _svg_dashed_line(x1, y1, x2, y2, color="#aaa", width=1.5):
+    """Draw a dashed line."""
+    return (
+        f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+        f'stroke="{color}" stroke-width="{width}" stroke-dasharray="5,4"/>'
+    )
+
+
+def _svg_arrow(x1, y1, x2, y2, color="#e76f51", width=2):
+    """Draw a line with an arrowhead."""
+    svg = f'<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{color}"/></marker></defs>'
+    svg += (
+        f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+        f'stroke="{color}" stroke-width="{width}" marker-end="url(#arrowhead)"/>'
+    )
+    return svg
+
+
+# ---------------------------------------------------------------------------
+# Transformation templates
+# ---------------------------------------------------------------------------
+
+# ============ LEVEL 1 — Transformations ============
+
+def _t1_axial_symmetry():
+    """Reflect a point across the x- or y-axis."""
+    a = random.choice([v for v in range(-8, 9) if v != 0])
+    b = random.choice([v for v in range(-8, 9) if v != 0])
+    axis = random.choice(["x", "y"])
+
+    if axis == "x":
+        img_x, img_y = a, -b
+        axis_name = "asse x"
+        ask_coord = "y"
+        correct_value = float(img_y)
+    else:
+        img_x, img_y = -a, b
+        axis_name = "asse y"
+        ask_coord = "x"
+        correct_value = float(img_x)
+
+    scale = 15
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, img_x, img_y, f"P'({img_x},{img_y})", color="#e63946")
+    # dashed reflection line between original and image
+    px1, py1 = ox + a * sc, oy - b * sc
+    px2, py2 = ox + img_x * sc, oy - img_y * sc
+    svg += _svg_dashed_line(px1, py1, px2, py2, color="#e63946")
+    # highlight the reflection axis
+    if axis == "x":
+        svg += _svg_line(10, oy, 290, oy, color="#e76f51", width=2)
+    else:
+        svg += _svg_line(ox, 10, ox, 290, color="#e76f51", width=2)
+    svg += _svg_end()
+
+    question = (
+        f"Il punto P({a}, {b}) viene riflesso rispetto all'{axis_name}. "
+        f"Qual e' la coordinata {ask_coord} del punto immagine P'?"
+    )
+    explanation = (
+        f"Riflessione rispetto all'{axis_name}: "
+    )
+    if axis == "x":
+        explanation += (
+            f"(x, y) -> (x, -y). Quindi P'({a}, {-b}). "
+            f"La coordinata y del punto immagine e' {-b}."
+        )
+    else:
+        explanation += (
+            f"(x, y) -> (-x, y). Quindi P'({-a}, {b}). "
+            f"La coordinata x del punto immagine e' {-a}."
+        )
+    tip = "Riflessione rispetto all'asse x: cambia segno a y. Rispetto all'asse y: cambia segno a x."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t1_translation():
+    """Translate a point by a vector and ask for one coordinate of the image."""
+    a = random.randint(-6, 6)
+    b = random.randint(-6, 6)
+    h = random.choice([v for v in range(-5, 6) if v != 0])
+    k = random.choice([v for v in range(-5, 6) if v != 0])
+    img_x = a + h
+    img_y = b + k
+    ask = random.choice(["x", "y"])
+    correct_value = float(img_x) if ask == "x" else float(img_y)
+
+    scale = 15
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, img_x, img_y, f"P'({img_x},{img_y})", color="#e63946")
+    # arrow showing translation
+    px1, py1 = ox + a * sc, oy - b * sc
+    px2, py2 = ox + img_x * sc, oy - img_y * sc
+    svg += _svg_arrow(px1, py1, px2, py2, color="#e76f51")
+    svg += _svg_text(150, 290, f"vettore ({h}, {k})", color="#555", size=12)
+    svg += _svg_end()
+
+    h_sign = f"+{h}" if h >= 0 else str(h)
+    k_sign = f"+{k}" if k >= 0 else str(k)
+    question = (
+        f"Il punto P({a}, {b}) viene traslato di vettore ({h}, {k}). "
+        f"Qual e' la coordinata {ask} del punto immagine P'?"
+    )
+    explanation = (
+        f"Traslazione di vettore ({h}, {k}): P'(x+h, y+k) = P'({a}{h_sign}, {b}{k_sign}) "
+        f"= P'({img_x}, {img_y}). La coordinata {ask} e' {correct_value:.0f}."
+    )
+    tip = "La traslazione somma il vettore (h, k) alle coordinate del punto: P'(x+h, y+k)."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t1_point_symmetry():
+    """Reflect a point through the origin and ask for one coordinate."""
+    a = random.choice([v for v in range(-8, 9) if v != 0])
+    b = random.choice([v for v in range(-8, 9) if v != 0])
+    img_x, img_y = -a, -b
+    ask = random.choice(["x", "y"])
+    correct_value = float(img_x) if ask == "x" else float(img_y)
+
+    scale = 15
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, img_x, img_y, f"P'({img_x},{img_y})", color="#e63946")
+    # dashed line through origin
+    px1, py1 = ox + a * sc, oy - b * sc
+    px2, py2 = ox + img_x * sc, oy - img_y * sc
+    svg += _svg_dashed_line(px1, py1, px2, py2, color="#e63946")
+    # highlight origin
+    svg += f'<circle cx="{ox}" cy="{oy}" r="4" fill="#333"/>'
+    svg += _svg_text(ox + 10, oy + 15, "O", color="#333", bold=True, size=12)
+    svg += _svg_end()
+
+    question = (
+        f"Il punto P({a}, {b}) viene riflesso rispetto all'origine O. "
+        f"Qual e' la coordinata {ask} del punto immagine P'?"
+    )
+    explanation = (
+        f"Simmetria rispetto all'origine: (x, y) -> (-x, -y). "
+        f"Quindi P'({img_x}, {img_y}). La coordinata {ask} e' {correct_value:.0f}."
+    )
+    tip = "La simmetria centrale rispetto all'origine cambia segno a entrambe le coordinate: P'(-x, -y)."
+    return question, correct_value, svg, explanation, tip
+
+
+# ============ LEVEL 2 — Transformations ============
+
+def _t2_rotation_90():
+    """Rotate a point 90 or 270 degrees CCW around the origin."""
+    a = random.choice([v for v in range(-7, 8) if v != 0])
+    b = random.choice([v for v in range(-7, 8) if v != 0])
+    angle = random.choice([90, 270])
+
+    if angle == 90:
+        img_x, img_y = -b, a
+        rotation_desc = "90° in senso antiorario"
+    else:
+        img_x, img_y = b, -a
+        rotation_desc = "270° in senso antiorario (equivalente a 90° orario)"
+
+    ask = random.choice(["x", "y"])
+    correct_value = float(img_x) if ask == "x" else float(img_y)
+
+    scale = 15
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, img_x, img_y, f"P'({img_x},{img_y})", color="#e63946")
+    # draw rotation arc from P to P'
+    px1, py1 = ox + a * sc, oy - b * sc
+    px2, py2 = ox + img_x * sc, oy - img_y * sc
+    radius_svg = math.sqrt((a * sc) ** 2 + (b * sc) ** 2)
+    # Draw dashed arc
+    sweep = 0 if angle == 90 else 1
+    large_arc = 0 if angle <= 180 else 1
+    svg += (
+        f'<path d="M {px1:.1f} {py1:.1f} A {radius_svg:.1f} {radius_svg:.1f} 0 {large_arc} {sweep} {px2:.1f} {py2:.1f}" '
+        f'fill="none" stroke="#e76f51" stroke-width="1.5" stroke-dasharray="4,3"/>'
+    )
+    svg += f'<circle cx="{ox}" cy="{oy}" r="3" fill="#333"/>'
+    svg += _svg_text(ox + 10, oy + 15, "O", color="#333", bold=True, size=12)
+    svg += _svg_end()
+
+    question = (
+        f"Il punto P({a}, {b}) viene ruotato di {rotation_desc} attorno all'origine. "
+        f"Qual e' la coordinata {ask} del punto immagine P'?"
+    )
+    explanation = (
+        f"Rotazione di {rotation_desc}: "
+    )
+    if angle == 90:
+        explanation += (
+            f"(x, y) -> (-y, x). Quindi P'({-b}, {a}). "
+            f"La coordinata {ask} e' {correct_value:.0f}."
+        )
+    else:
+        explanation += (
+            f"(x, y) -> (y, -x). Quindi P'({b}, {-a}). "
+            f"La coordinata {ask} e' {correct_value:.0f}."
+        )
+    tip = "Rotazione 90° antioraria: (x,y)->(-y,x). Rotazione 90° oraria (=270° antioraria): (x,y)->(y,-x)."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t2_similarity_lengths():
+    """Find the corresponding side of a smaller similar triangle."""
+    k = random.choice([1.5, 2, 2.5, 3])
+    big_side = random.choice([6, 8, 9, 10, 12, 15, 18, 20])
+    small_side = big_side / k
+    # Ensure clean number
+    while abs(small_side - round(small_side, 1)) > 0.01 and small_side != int(small_side):
+        big_side = random.choice([6, 8, 9, 10, 12, 15, 18, 20])
+        small_side = big_side / k
+
+    correct_value = small_side
+
+    svg = _svg_start(350, 260)
+    # Large triangle
+    svg += _svg_polygon([(30, 220), (180, 220), (105, 80)], fill="#f0f7ff")
+    svg += _svg_label_known(105, 238, f"{big_side}")
+    svg += _svg_text(105, 60, "Grande", color="#555", size=11)
+    # Small triangle
+    small_base = int(80 / k)
+    svg += _svg_polygon([(220, 220), (220 + small_base, 220), (220 + small_base // 2, 220 - int(70 / k))], fill="#fff3e0")
+    svg += _svg_label_unknown(220 + small_base // 2, 238, "?")
+    svg += _svg_text(220 + small_base // 2, 220 - int(70 / k) - 12, "Piccolo", color="#555", size=11)
+    svg += _svg_text(175, 30, f"k = {_fmt(k)}", color="#e63946", bold=True, size=13)
+    svg += _svg_end()
+
+    question = (
+        f"Due triangoli sono simili con rapporto di similitudine k = {_fmt(k)}. "
+        f"Se un lato del triangolo piu' grande misura {_fmt(big_side)}, "
+        f"quanto misura il lato corrispondente del triangolo piu' piccolo?"
+    )
+    explanation = (
+        f"Rapporto di similitudine k = {_fmt(k)} significa che il lato grande = k * lato piccolo. "
+        f"Quindi lato piccolo = {_fmt(big_side)} / {_fmt(k)} = {_fmt(small_side)}."
+    )
+    tip = "Nei triangoli simili con rapporto k, i lati corrispondenti stanno nel rapporto k:1."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t2_rotation_180_sum():
+    """Rotate a point 180 degrees and ask for the sum of coordinates."""
+    a = random.choice([v for v in range(-7, 8) if v != 0])
+    b = random.choice([v for v in range(-7, 8) if v != 0])
+    # Avoid trivial case where a+b == 0 already
+    while a + b == 0:
+        b = random.choice([v for v in range(-7, 8) if v != 0])
+    img_x, img_y = -a, -b
+    correct_value = float(img_x + img_y)
+
+    scale = 15
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, img_x, img_y, f"P'({img_x},{img_y})", color="#e63946")
+    svg += _svg_dashed_line(ox + a * sc, oy - b * sc, ox + img_x * sc, oy - img_y * sc, color="#e63946")
+    svg += f'<circle cx="{ox}" cy="{oy}" r="3" fill="#333"/>'
+    svg += _svg_text(ox + 10, oy + 15, "O", color="#333", bold=True, size=12)
+    svg += _svg_end()
+
+    question = (
+        f"Dopo una rotazione di 180° attorno all'origine, il punto P({a}, {b}) "
+        f"ha coordinate P'(x, y). Quanto vale x + y?"
+    )
+    explanation = (
+        f"Rotazione di 180°: (x, y) -> (-x, -y). "
+        f"Quindi P'({img_x}, {img_y}). "
+        f"x + y = {img_x} + ({img_y}) = {img_x + img_y}."
+    )
+    tip = "La rotazione di 180° attorno all'origine equivale alla simmetria centrale: (x,y)->(-x,-y)."
+    return question, correct_value, svg, explanation, tip
+
+
+# ============ LEVEL 3 — Transformations ============
+
+def _t3_similarity_area():
+    """Area scaling with similarity ratio k: area scales by k^2."""
+    k = random.choice([2, 3, 1.5, 2.5])
+    use_volume = random.choice([True, False])
+
+    if use_volume:
+        small_vol = random.choice([4, 8, 10, 12, 16, 20, 27])
+        correct_value = small_vol * k ** 3
+        quantity = "volume"
+        formula = "k^3"
+        power = 3
+    else:
+        small_area = random.choice([4, 6, 8, 9, 10, 12, 16, 25])
+        correct_value = small_area * k ** 2
+        quantity = "area"
+        formula = "k^2"
+        power = 2
+
+    measure = small_vol if use_volume else small_area
+
+    svg = _svg_start(350, 220)
+    if use_volume:
+        # Two cubes (simplified)
+        svg += _svg_polygon([(30, 170), (90, 170), (90, 110), (30, 110)], fill="#f0f7ff")
+        svg += _svg_polygon([(40, 100), (100, 100), (100, 160), (40, 160)], fill="#dbe9f7")
+        svg += _svg_text(60, 190, f"V = {measure}", color="#2a9d8f", bold=True, size=11)
+        big_size = int(60 * min(k, 2.5))
+        svg += _svg_polygon([(160, 170), (160 + big_size, 170), (160 + big_size, 170 - big_size), (160, 170 - big_size)], fill="#fff3e0")
+        svg += _svg_text(160 + big_size // 2, 190, "V = ?", color="#e63946", bold=True, size=11)
+    else:
+        svg += _svg_polygon([(30, 180), (100, 180), (65, 120)], fill="#f0f7ff")
+        svg += _svg_text(65, 198, f"A = {measure}", color="#2a9d8f", bold=True, size=11)
+        big_base = int(70 * min(k, 2.5))
+        svg += _svg_polygon([(160, 180), (160 + big_base, 180), (160 + big_base // 2, 180 - int(60 * min(k, 2.5)))], fill="#fff3e0")
+        svg += _svg_text(160 + big_base // 2, 198, "A = ?", color="#e63946", bold=True, size=11)
+    svg += _svg_text(175, 20, f"k = {_fmt(k)}", color="#e63946", bold=True, size=13)
+    svg += _svg_end()
+
+    question = (
+        f"Due figure sono simili con rapporto di similitudine k = {_fmt(k)}. "
+        f"Se il {quantity} della figura piccola e' {measure}, "
+        f"qual e' il {quantity} della figura grande?"
+    )
+    explanation = (
+        f"Per figure simili con rapporto k, il {quantity} scala con {formula}. "
+        f"{quantity.capitalize()} grande = {measure} * {_fmt(k)}^{power} = {measure} * {_fmt(k ** power)} = {_fmt(correct_value)}."
+    )
+    tip = f"Per figure simili: le lunghezze scalano con k, le aree con k^2, i volumi con k^3."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t3_compose_transformations():
+    """Apply two transformations in sequence: translation then reflection."""
+    a = random.choice([v for v in range(-5, 6) if v != 0])
+    b = random.choice([v for v in range(-5, 6) if v != 0])
+    h = random.choice([v for v in range(-4, 5) if v != 0])
+    k = random.choice([v for v in range(-4, 5) if v != 0])
+
+    # Step 1: translate
+    mid_x = a + h
+    mid_y = b + k
+    # Step 2: reflect across x-axis
+    final_x = mid_x
+    final_y = -mid_y
+    correct_value = float(final_y)
+
+    scale = 12
+    svg, ox, oy, sc = _svg_coordinate_plane(300, 300, scale)
+    svg += _svg_point(ox, oy, sc, a, b, f"P({a},{b})", color="#2a9d8f")
+    svg += _svg_point(ox, oy, sc, mid_x, mid_y, f"P\u2081({mid_x},{mid_y})", color="#e76f51")
+    svg += _svg_point(ox, oy, sc, final_x, final_y, f"P'({final_x},{final_y})", color="#e63946")
+    # arrows
+    px0, py0 = ox + a * sc, oy - b * sc
+    px1, py1 = ox + mid_x * sc, oy - mid_y * sc
+    px2, py2 = ox + final_x * sc, oy - final_y * sc
+    svg += _svg_arrow(px0, py0, px1, py1, color="#e76f51")
+    svg += _svg_dashed_line(px1, py1, px2, py2, color="#e63946")
+    # highlight x-axis
+    svg += _svg_line(10, oy, 290, oy, color="#e76f51", width=2)
+    svg += _svg_end()
+
+    h_sign = f"+{h}" if h >= 0 else str(h)
+    k_sign = f"+{k}" if k >= 0 else str(k)
+    question = (
+        f"Il punto P({a}, {b}) viene prima traslato di vettore ({h}, {k}), "
+        f"poi riflesso rispetto all'asse x. "
+        f"Qual e' la coordinata y del punto finale P'?"
+    )
+    explanation = (
+        f"Passo 1 - Traslazione: P({a},{b}) + ({h},{k}) = P\u2081({mid_x}, {mid_y}).\n"
+        f"Passo 2 - Riflessione asse x: (x, y) -> (x, -y). "
+        f"P'({final_x}, {final_y}). La coordinata y e' {final_y}."
+    )
+    tip = "Nelle trasformazioni composte, applica le operazioni nell'ordine indicato. L'ordine conta!"
+    return question, correct_value, svg, explanation, tip
+
+
+def _t3_transformation_vertices():
+    """Translate a triangle and ask for the sum of x-coordinates of new vertices."""
+    for _attempt in range(200):
+        x1 = random.randint(-4, 4)
+        y1 = random.randint(-4, 4)
+        x2 = random.randint(-4, 4)
+        y2 = random.randint(-4, 4)
+        x3 = random.randint(-4, 4)
+        y3 = random.randint(-4, 4)
+        area = abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2
+        if area >= 1:
+            break
+    else:
+        # Fallback: guaranteed non-degenerate
+        x1, y1, x2, y2, x3, y3 = 0, 0, 3, 0, 0, 4
+
+    h = random.choice([v for v in range(-5, 6) if v != 0])
+    k = random.choice([v for v in range(-5, 6) if v != 0])
+
+    sum_new_x = (x1 + h) + (x2 + h) + (x3 + h)
+    correct_value = float(sum_new_x)
+
+    scale = 14
+    svg, ox, oy, sc = _svg_coordinate_plane(340, 300, scale, origin=(170, 150))
+    # Original triangle
+    pts_orig = [
+        (ox + x1 * sc, oy - y1 * sc),
+        (ox + x2 * sc, oy - y2 * sc),
+        (ox + x3 * sc, oy - y3 * sc),
+    ]
+    svg += _svg_polygon(pts_orig, fill="#f0f7ff", stroke="#2a9d8f")
+    svg += _svg_text(pts_orig[0][0], pts_orig[0][1] - 8, f"A({x1},{y1})", color="#2a9d8f", size=10)
+    svg += _svg_text(pts_orig[1][0], pts_orig[1][1] - 8, f"B({x2},{y2})", color="#2a9d8f", size=10)
+    svg += _svg_text(pts_orig[2][0], pts_orig[2][1] - 8, f"C({x3},{y3})", color="#2a9d8f", size=10)
+    # Translated triangle
+    pts_new = [
+        (ox + (x1 + h) * sc, oy - (y1 + k) * sc),
+        (ox + (x2 + h) * sc, oy - (y2 + k) * sc),
+        (ox + (x3 + h) * sc, oy - (y3 + k) * sc),
+    ]
+    svg += _svg_polygon(pts_new, fill="#fff3e0", stroke="#e63946")
+    svg += _svg_text(170, 290, f"vettore ({h}, {k})", color="#555", size=12)
+    svg += _svg_end()
+
+    question = (
+        f"Il triangolo con vertici A({x1},{y1}), B({x2},{y2}), C({x3},{y3}) "
+        f"viene traslato di vettore ({h}, {k}). "
+        f"Qual e' la somma delle coordinate x dei nuovi vertici?"
+    )
+    explanation = (
+        f"I nuovi vertici sono: A'({x1 + h},{y1 + k}), B'({x2 + h},{y2 + k}), C'({x3 + h},{y3 + k}).\n"
+        f"Somma delle x: ({x1 + h}) + ({x2 + h}) + ({x3 + h}) = "
+        f"{x1} + {x2} + {x3} + 3*{h} = {x1 + x2 + x3} + {3 * h} = {sum_new_x}."
+    )
+    tip = "Quando si trasla un poligono, ogni vertice si sposta dello stesso vettore. La somma delle x cresce di n*h (n = numero vertici)."
+    return question, correct_value, svg, explanation, tip
+
+
+# ============ SIMILAR TRIANGLES — EXPANDED ============
+
+def _t2_similar_find_side():
+    """Find unknown side of a similar triangle via proportion (3 known sides + 1)."""
+    # Triangle A sides
+    a1 = random.randint(3, 8)
+    a2 = random.randint(3, 8)
+    a3 = random.randint(3, 8)
+    # Scale factor (clean values)
+    k = random.choice([1.5, 2, 2.5, 3, 4])
+    # Triangle B: one known side, find corresponding side
+    which = random.randint(0, 2)  # which side of A maps to the known side of B
+    sides_a = [a1, a2, a3]
+    sides_b_known_idx = which
+    b_known = sides_a[sides_b_known_idx] * k
+    # Ask for a different corresponding side
+    ask_idx = (which + 1) % 3
+    correct_value = sides_a[ask_idx] * k
+
+    # SVG: two triangles side by side
+    svg = _svg_start(380, 260)
+    # Small triangle (A)
+    svg += _svg_polygon([(30, 220), (130, 220), (80, 100)], fill="#f0f7ff")
+    svg += _svg_text(80, 80, "A", color="#555", size=13)
+    labels_a = [
+        ((30 + 130) // 2, 238),   # bottom side
+        ((130 + 80) // 2 + 15, (220 + 100) // 2),  # right side
+        ((30 + 80) // 2 - 15, (220 + 100) // 2),   # left side
+    ]
+    for i, (lx, ly) in enumerate(labels_a):
+        svg += _svg_label_known(lx, ly, f"{sides_a[i]}")
+
+    # Large triangle (B)
+    svg += _svg_polygon([(200, 220), (340, 220), (270, 80)], fill="#fff3e0")
+    svg += _svg_text(270, 60, "B", color="#555", size=13)
+    labels_b = [
+        ((200 + 340) // 2, 238),
+        ((340 + 270) // 2 + 15, (220 + 80) // 2),
+        ((200 + 270) // 2 - 15, (220 + 80) // 2),
+    ]
+    for i, (lx, ly) in enumerate(labels_b):
+        if i == sides_b_known_idx:
+            svg += _svg_label_known(lx, ly, f"{_fmt(b_known)}")
+        elif i == ask_idx:
+            svg += _svg_label_unknown(lx, ly, "?")
+        else:
+            svg += _svg_text(lx, ly, "—", color="#aaa", size=11)
+
+    svg += _svg_text(190, 30, "Triangoli simili", color="#555", size=14)
+    svg += _svg_end()
+
+    side_names = ["primo", "secondo", "terzo"]
+    question = (
+        f"Due triangoli sono simili. Il triangolo A ha lati {a1}, {a2} e {a3}. "
+        f"Nel triangolo B il lato corrispondente al {side_names[sides_b_known_idx]} lato di A "
+        f"misura {_fmt(b_known)}. Quanto misura il lato di B corrispondente "
+        f"al {side_names[ask_idx]} lato di A?"
+    )
+    explanation = (
+        f"Rapporto di similitudine k = {_fmt(b_known)} / {sides_a[sides_b_known_idx]} = {_fmt(k)}. "
+        f"Lato cercato = {sides_a[ask_idx]} * {_fmt(k)} = {_fmt(correct_value)}."
+    )
+    tip = "Per trovare un lato incognito di un triangolo simile, prima calcola il rapporto k, poi moltiplica."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t2_similar_scale_factor():
+    """Determine the scale factor between two similar triangles."""
+    k = random.choice([1.5, 2, 2.5, 3, 4, 5])
+    base_side = random.randint(3, 10)
+    big_side = base_side * k
+
+    svg = _svg_start(380, 260)
+    # Small triangle
+    s = min(80, base_side * 10)
+    svg += _svg_polygon([(30, 220), (30 + s, 220), (30 + s // 2, 220 - int(s * 0.8))], fill="#f0f7ff")
+    svg += _svg_label_known(30 + s // 2, 238, f"{base_side}")
+    svg += _svg_text(30 + s // 2, 220 - int(s * 0.8) - 12, "Piccolo", color="#555", size=11)
+
+    # Large triangle
+    b = min(160, int(big_side * 10))
+    lx = 200
+    svg += _svg_polygon([(lx, 220), (lx + b, 220), (lx + b // 2, 220 - int(b * 0.8))], fill="#fff3e0")
+    svg += _svg_label_known(lx + b // 2, 238, f"{_fmt(big_side)}")
+    svg += _svg_text(lx + b // 2, 220 - int(b * 0.8) - 12, "Grande", color="#555", size=11)
+
+    svg += _svg_text(190, 25, "k = ?", color="#e63946", bold=True, size=14)
+    svg += _svg_end()
+
+    question = (
+        f"Due triangoli sono simili. Un lato del triangolo piccolo misura {base_side} "
+        f"e il lato corrispondente del triangolo grande misura {_fmt(big_side)}. "
+        f"Qual e' il rapporto di similitudine k (grande/piccolo)?"
+    )
+    explanation = (
+        f"k = lato grande / lato piccolo = {_fmt(big_side)} / {base_side} = {_fmt(k)}."
+    )
+    tip = "Il rapporto di similitudine k e' il rapporto tra i lati corrispondenti: k = lato grande / lato piccolo."
+    return question, k, svg, explanation, tip
+
+
+def _t2_similar_area_ratio():
+    """Given scale factor k, find area of larger figure from area of smaller."""
+    k = random.choice([2, 3, 1.5, 2.5, 4])
+    small_area = random.choice([4, 6, 8, 9, 10, 12, 16, 20, 25])
+    correct_value = small_area * k * k
+
+    svg = _svg_start(380, 220)
+    # Small triangle
+    svg += _svg_polygon([(30, 180), (100, 180), (65, 120)], fill="#f0f7ff")
+    svg += _svg_text(65, 198, f"A = {small_area}", color="#2a9d8f", bold=True, size=11)
+    svg += _svg_text(65, 108, "Piccolo", color="#555", size=11)
+    # Large triangle
+    big_base = min(int(70 * min(k, 3)), 160)
+    big_h = min(int(60 * min(k, 3)), 140)
+    svg += _svg_polygon([(160, 180), (160 + big_base, 180), (160 + big_base // 2, 180 - big_h)], fill="#fff3e0")
+    svg += _svg_text(160 + big_base // 2, 198, "A = ?", color="#e63946", bold=True, size=11)
+    svg += _svg_text(160 + big_base // 2, 180 - big_h - 12, "Grande", color="#555", size=11)
+    svg += _svg_text(190, 20, f"k = {_fmt(k)}", color="#e63946", bold=True, size=14)
+    svg += _svg_end()
+
+    question = (
+        f"Due figure sono simili con rapporto di similitudine k = {_fmt(k)}. "
+        f"L'area della figura piccola e' {small_area} cm^2. "
+        f"Qual e' l'area della figura grande?"
+    )
+    explanation = (
+        f"Per figure simili, l'area scala con k^2. "
+        f"Area grande = {small_area} * {_fmt(k)}^2 = {small_area} * {_fmt(k * k)} = {_fmt(correct_value)} cm^2."
+    )
+    tip = "Nei triangoli simili con rapporto k, le aree stanno nel rapporto k^2."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t3_similar_real_world():
+    """Real-world similarity: shadow/height proportion to find tree height."""
+    person_h = random.choice([1.6, 1.7, 1.75, 1.8, 1.85])
+    person_shadow = random.choice([2.0, 2.5, 3.0, 3.5, 4.0])
+    tree_shadow = random.choice([8, 10, 12, 14, 15, 16, 18, 20])
+    # tree_h / tree_shadow = person_h / person_shadow
+    correct_value = person_h * tree_shadow / person_shadow
+
+    svg = _svg_start(380, 260)
+    # Ground line
+    svg += _svg_line(10, 220, 370, 220, color="#aaa", width=1)
+    # Person (stick figure)
+    px = 60
+    p_scale = 30
+    svg += _svg_line(px, 220, px, 220 - int(person_h * p_scale), color="#2a9d8f", width=3)
+    svg += _svg_circle(px, 220 - int(person_h * p_scale) - 5, 5, fill="#2a9d8f", stroke="#2a9d8f", width=1)
+    svg += _svg_label_known(px - 25, 220 - int(person_h * p_scale * 0.5), f"{person_h} m")
+    # Person shadow
+    svg += _svg_line(px, 220, px + int(person_shadow * 15), 220, color="#f4a261", width=3)
+    svg += _svg_label_known(px + int(person_shadow * 7.5), 235, f"{_fmt(person_shadow)} m")
+    # Tree
+    tx = 220
+    t_scale = 8
+    tree_h_display = min(int(correct_value * t_scale), 160)
+    svg += _svg_line(tx, 220, tx, 220 - tree_h_display, color="#2a9d8f", width=5)
+    # Tree crown
+    svg += _svg_polygon(
+        [(tx - 20, 220 - tree_h_display + 10), (tx + 20, 220 - tree_h_display + 10), (tx, 220 - tree_h_display - 15)],
+        fill="#a7c957", stroke="#6a994e", width=2
+    )
+    svg += _svg_label_unknown(tx - 30, 220 - tree_h_display // 2, "? m")
+    # Tree shadow
+    svg += _svg_line(tx, 220, tx + int(tree_shadow * 5), 220, color="#f4a261", width=3)
+    svg += _svg_label_known(tx + int(tree_shadow * 2.5), 235, f"{tree_shadow} m")
+    svg += _svg_text(190, 20, "Ombre proporzionali", color="#555", size=13)
+    svg += _svg_end()
+
+    question = (
+        f"Una persona alta {_fmt(person_h)} m proietta un'ombra di {_fmt(person_shadow)} m. "
+        f"Nello stesso momento, un albero proietta un'ombra di {tree_shadow} m. "
+        f"Qual e' l'altezza dell'albero?"
+    )
+    explanation = (
+        f"Per similitudine dei triangoli formati dai raggi del sole: "
+        f"altezza_albero / ombra_albero = altezza_persona / ombra_persona. "
+        f"altezza_albero = {_fmt(person_h)} * {tree_shadow} / {_fmt(person_shadow)} = {_fmt(correct_value)} m."
+    )
+    tip = "Quando il sole colpisce con lo stesso angolo, i triangoli ombra-oggetto sono simili."
+    return question, correct_value, svg, explanation, tip
+
+
+# ============ TRIGONOMETRIC RATIOS — EXPANDED ============
+
+def _t2_trig_find_ratio():
+    """Given a right triangle with labeled sides, find sin/cos/tan of a specified angle."""
+    a = random.randint(3, 12)
+    b = random.randint(3, 12)
+    c = math.sqrt(a * a + b * b)
+    # Choose which trig function to ask about
+    func_name = random.choice(["sin", "cos", "tan"])
+    # angle alpha at vertex between hypotenuse and adjacent side 'a'
+    # opp = b, adj = a, hyp = c
+    if func_name == "sin":
+        correct_value = b / c
+        formula_str = f"cateto opposto / ipotenusa = {b} / {_fmt(c)}"
+    elif func_name == "cos":
+        correct_value = a / c
+        formula_str = f"cateto adiacente / ipotenusa = {a} / {_fmt(c)}"
+    else:
+        correct_value = b / a
+        formula_str = f"cateto opposto / cateto adiacente = {b} / {a}"
+
+    # SVG: right triangle with labeled sides
+    ox, oy = 50, 210
+    bx, by = ox + a * 12, oy
+    tx, ty = ox, oy - b * 12
+    svg = _svg_start()
+    svg += _svg_polygon([(ox, oy), (bx, by), (tx, ty)], fill="#f0f7ff")
+    svg += _svg_right_angle(ox, oy, 0, 90)
+    svg += _svg_label_known((ox + bx) / 2, oy + 20, f"{a}")
+    svg += _svg_label_known(ox - 20, (oy + ty) / 2, f"{b}")
+    svg += _svg_label_known((bx + tx) / 2 + 15, (by + ty) / 2, _fmt(c))
+    # Mark the angle alpha at vertex B (bottom-right)
+    alpha_deg = math.degrees(math.atan2(b, a))
+    svg += _svg_arc_angle(bx, by, 90 + alpha_deg, 180, radius=20, label="α")
+    svg += _svg_end()
+
+    question = (
+        f"Un triangolo rettangolo ha cateti {a} e {b} e ipotenusa {_fmt(c)}. "
+        f"Quanto vale {func_name}(α), dove α e' l'angolo in basso a destra?"
+    )
+    explanation = (
+        f"{func_name}(α) = {formula_str} = {_fmt(correct_value)}."
+    )
+    tip = "SOH-CAH-TOA: sin = opposto/ipotenusa, cos = adiacente/ipotenusa, tan = opposto/adiacente."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t2_trig_find_side():
+    """Given an angle and one side of a right triangle, find another side using trig."""
+    angle_deg = random.choice([30, 45, 60])
+    angle_rad = math.radians(angle_deg)
+    # Choose what is given and what to find
+    scenario = random.choice(["hyp_find_opp", "hyp_find_adj", "adj_find_opp"])
+
+    if scenario == "hyp_find_opp":
+        hyp = random.randint(5, 20)
+        correct_value = hyp * math.sin(angle_rad)
+        opp = correct_value
+        adj = hyp * math.cos(angle_rad)
+        given_str = f"ipotenusa = {hyp}"
+        ask_str = "il cateto opposto all'angolo"
+        formula = f"{hyp} * sin({angle_deg}°) = {hyp} * {_fmt(math.sin(angle_rad))} = {_fmt(correct_value)}"
+    elif scenario == "hyp_find_adj":
+        hyp = random.randint(5, 20)
+        correct_value = hyp * math.cos(angle_rad)
+        adj = correct_value
+        opp = hyp * math.sin(angle_rad)
+        given_str = f"ipotenusa = {hyp}"
+        ask_str = "il cateto adiacente all'angolo"
+        formula = f"{hyp} * cos({angle_deg}°) = {hyp} * {_fmt(math.cos(angle_rad))} = {_fmt(correct_value)}"
+    else:
+        adj = random.randint(5, 15)
+        correct_value = adj * math.tan(angle_rad)
+        opp = correct_value
+        hyp = math.sqrt(adj * adj + opp * opp)
+        given_str = f"cateto adiacente = {adj}"
+        ask_str = "il cateto opposto all'angolo"
+        formula = f"{adj} * tan({angle_deg}°) = {adj} * {_fmt(math.tan(angle_rad))} = {_fmt(correct_value)}"
+
+    # SVG
+    ox, oy = 50, 210
+    scale = min(12, 180 / max(adj, opp, 1))
+    bx, by = ox + int(adj * scale), oy
+    tx, ty = ox, oy - int(opp * scale)
+    svg = _svg_start()
+    svg += _svg_polygon([(ox, oy), (bx, by), (tx, ty)], fill="#f0f7ff")
+    svg += _svg_right_angle(ox, oy, 0, 90)
+    svg += _svg_arc_angle(bx, by, 90 + angle_deg, 180, radius=22, label=f"{angle_deg}°")
+
+    if scenario == "hyp_find_opp":
+        svg += _svg_label_known((bx + tx) / 2 + 15, (by + ty) / 2, f"{hyp}")
+        svg += _svg_label_unknown(ox - 18, (oy + ty) / 2, "?")
+    elif scenario == "hyp_find_adj":
+        svg += _svg_label_known((bx + tx) / 2 + 15, (by + ty) / 2, f"{hyp}")
+        svg += _svg_label_unknown((ox + bx) / 2, oy + 20, "?")
+    else:
+        svg += _svg_label_known((ox + bx) / 2, oy + 20, f"{adj}")
+        svg += _svg_label_unknown(ox - 18, (oy + ty) / 2, "?")
+    svg += _svg_end()
+
+    question = (
+        f"Un triangolo rettangolo ha {given_str} e un angolo acuto di {angle_deg}°. "
+        f"Quanto misura {ask_str}?"
+    )
+    explanation = f"Cateto cercato = {formula}."
+    tip = "SOH-CAH-TOA: sin = opposto/ipotenusa, cos = adiacente/ipotenusa, tan = opposto/adiacente."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t3_trig_identify_angle():
+    """Given two sides of a right triangle, find an angle in degrees."""
+    angle_deg = random.choice([30, 45, 60])
+    angle_rad = math.radians(angle_deg)
+    hyp = random.randint(5, 15)
+    opp = hyp * math.sin(angle_rad)
+    adj = hyp * math.cos(angle_rad)
+
+    # Choose which ratio to present
+    ratio_type = random.choice(["sin", "cos", "tan"])
+    if ratio_type == "sin":
+        ratio_str = f"{_fmt(opp)} / {_fmt(hyp)}"
+        ratio_desc = "cateto opposto / ipotenusa"
+        func_inv = "arcsin"
+    elif ratio_type == "cos":
+        ratio_str = f"{_fmt(adj)} / {_fmt(hyp)}"
+        ratio_desc = "cateto adiacente / ipotenusa"
+        func_inv = "arccos"
+    else:
+        ratio_str = f"{_fmt(opp)} / {_fmt(adj)}"
+        ratio_desc = "cateto opposto / cateto adiacente"
+        func_inv = "arctan"
+
+    correct_value = float(angle_deg)
+
+    # SVG
+    ox, oy = 50, 210
+    scale = min(12, 180 / max(adj, opp, 1))
+    bx, by = ox + int(adj * scale), oy
+    tx, ty = ox, oy - int(opp * scale)
+    svg = _svg_start()
+    svg += _svg_polygon([(ox, oy), (bx, by), (tx, ty)], fill="#f0f7ff")
+    svg += _svg_right_angle(ox, oy, 0, 90)
+    svg += _svg_label_known((ox + bx) / 2, oy + 20, _fmt(adj))
+    svg += _svg_label_known(ox - 18, (oy + ty) / 2, _fmt(opp))
+    svg += _svg_label_known((bx + tx) / 2 + 15, (by + ty) / 2, f"{hyp}")
+    svg += _svg_arc_angle(bx, by, 90 + angle_deg, 180, radius=22, label="α = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un triangolo rettangolo ha cateto opposto {_fmt(opp)}, "
+        f"cateto adiacente {_fmt(adj)} e ipotenusa {hyp}. "
+        f"Quanto vale l'angolo α (in gradi) sapendo che "
+        f"{ratio_type}(α) = {ratio_desc} = {ratio_str}?"
+    )
+    explanation = (
+        f"α = {func_inv}({ratio_str}) = {angle_deg}°."
+    )
+    tip = "Gli angoli notevoli da ricordare: sin(30°)=0.5, sin(45°)=√2/2≈0.71, sin(60°)=√3/2≈0.87."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t3_trig_real_world():
+    """Real-world trig: find height of building from distance and elevation angle."""
+    angle_deg = random.choice([30, 45, 60])
+    angle_rad = math.radians(angle_deg)
+    distance = random.choice([10, 15, 20, 25, 30, 40, 50])
+    # height = distance * tan(angle)
+    correct_value = distance * math.tan(angle_rad)
+
+    # SVG: building + observer
+    svg = _svg_start(380, 260)
+    # Ground
+    svg += _svg_line(10, 230, 370, 230, color="#aaa", width=1)
+    # Observer
+    obs_x = 60
+    svg += _svg_line(obs_x, 230, obs_x, 200, color="#2a9d8f", width=3)
+    svg += _svg_circle(obs_x, 195, 5, fill="#2a9d8f", stroke="#2a9d8f", width=1)
+    # Building
+    bld_x = 300
+    bld_h = min(int(correct_value * 3), 170)
+    svg += _svg_polygon(
+        [(bld_x - 25, 230), (bld_x + 25, 230), (bld_x + 25, 230 - bld_h), (bld_x - 25, 230 - bld_h)],
+        fill="#dbe9f7", stroke="#333", width=2
+    )
+    svg += _svg_label_unknown(bld_x + 40, 230 - bld_h // 2, "h = ?")
+    # Distance label
+    svg += _svg_label_known((obs_x + bld_x) / 2, 245, f"{distance} m")
+    # Angle of elevation line (dashed)
+    svg += f'<line x1="{obs_x}" y1="200" x2="{bld_x}" y2="{230 - bld_h}" stroke="#e63946" stroke-width="1.5" stroke-dasharray="4,4"/>'
+    # Angle arc
+    svg += _svg_arc_angle(obs_x, 200, -angle_deg, 0, radius=30, label=f"{angle_deg}°")
+    svg += _svg_end()
+
+    question = (
+        f"Un osservatore si trova a {distance} m dalla base di un edificio. "
+        f"L'angolo di elevazione dalla sua posizione alla cima dell'edificio e' di {angle_deg}°. "
+        f"Qual e' l'altezza dell'edificio? (ignora l'altezza dell'osservatore)"
+    )
+    explanation = (
+        f"tan({angle_deg}°) = altezza / distanza. "
+        f"Altezza = {distance} * tan({angle_deg}°) = {distance} * {_fmt(math.tan(angle_rad))} "
+        f"= {_fmt(correct_value)} m."
+    )
+    tip = "Per problemi di angolo di elevazione: altezza = distanza * tan(angolo)."
+    return question, correct_value, svg, explanation, tip
+
+
 class GeometrySherlock(Exercise):
     """Sherlock Geometrico -- geometric figures with partial data and progressive clues."""
 
@@ -1357,6 +2255,9 @@ class GeometrySherlock(Exercise):
         _t1_triangle_area,
         _t1_cylinder_volume,
         _t1_rectangular_prism_volume,
+        _t1_axial_symmetry,
+        _t1_translation,
+        _t1_point_symmetry,
     ]
 
     TEMPLATES_L2 = [
@@ -1371,6 +2272,14 @@ class GeometrySherlock(Exercise):
         _t2_cone_volume,
         _t2_sphere_volume,
         _t2_pyramid_volume,
+        _t2_rotation_90,
+        _t2_similarity_lengths,
+        _t2_rotation_180_sum,
+        _t2_similar_find_side,
+        _t2_similar_scale_factor,
+        _t2_similar_area_ratio,
+        _t2_trig_find_ratio,
+        _t2_trig_find_side,
     ]
 
     TEMPLATES_L3 = [
@@ -1384,9 +2293,33 @@ class GeometrySherlock(Exercise):
         _t3_power_of_point,
         _t3_composite_cylinder_cone,
         _t3_sphere_inscribed_in_cylinder,
+        _t3_similarity_area,
+        _t3_compose_transformations,
+        _t3_transformation_vertices,
+        _t3_similar_real_world,
+        _t3_trig_identify_angle,
+        _t3_trig_real_world,
     ]
 
-    def generate(self, difficulty: int) -> dict:
+    # Templates whose answers can be negative or zero, requiring signed distractors
+    _SIGNED_TEMPLATES = {
+        _t1_axial_symmetry,
+        _t1_translation,
+        _t1_point_symmetry,
+        _t2_rotation_90,
+        _t2_rotation_180_sum,
+        _t3_compose_transformations,
+        _t3_transformation_vertices,
+    }
+
+    def generate(self, difficulty: int, text_only: bool = False) -> dict:
+        """Generate a geometry exercise.
+
+        Args:
+            difficulty: 1-3 difficulty level.
+            text_only: If True, suppress SVG graph_data (for exam simulation
+                       realism — real TOLC-B geometry is text-only).
+        """
         difficulty = max(1, min(3, difficulty))
 
         if difficulty == 1:
@@ -1400,7 +2333,10 @@ class GeometrySherlock(Exercise):
         question, correct_value, svg, explanation, tip = template_fn()
 
         correct_str = _fmt(correct_value)
-        distractors = _distractor(correct_value)
+        if template_fn in self._SIGNED_TEMPLATES:
+            distractors = _distractor_signed(correct_value)
+        else:
+            distractors = _distractor(correct_value)
 
         options = [correct_str] + distractors
         correct_index = 0
@@ -1408,7 +2344,7 @@ class GeometrySherlock(Exercise):
 
         return {
             "question": question,
-            "graph_data": svg,
+            "graph_data": None if text_only else svg,
             "options": options,
             "correct_index": correct_index,
             "explanation": explanation,

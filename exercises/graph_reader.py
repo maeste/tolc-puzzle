@@ -115,6 +115,97 @@ def _build_svg(func, x_range=(-5, 5), y_range=(-5, 5), n_points=120, color="#256
     return "".join(parts)
 
 
+def _build_svg_multi(curves, x_range=(-5, 5), y_range=(-5, 5), n_points=120):
+    """Build an SVG plotting multiple curves on the same axes.
+
+    Parameters
+    ----------
+    curves : list of (callable, str, str)
+        Each entry is (func, color, label).
+    x_range, y_range : tuple of (min, max) in math coords
+    n_points : int – number of sample points per curve
+    """
+    x_min, x_max = x_range
+    y_min, y_max = y_range
+
+    parts = []
+    parts.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_SVG_W} {_SVG_H}" '
+        f'width="{_SVG_W}" height="{_SVG_H}" '
+        f'style="background:#fff;border:1px solid #ddd;border-radius:6px">'
+    )
+
+    # light grid
+    grid_color = "#e5e7eb"
+    for gx in range(int(math.floor(x_min)), int(math.ceil(x_max)) + 1):
+        sx, _ = _world_to_svg(gx, 0, x_range, y_range)
+        parts.append(f'<line x1="{sx:.1f}" y1="{_PAD}" x2="{sx:.1f}" y2="{_PAD + _PLOT_H}" stroke="{grid_color}" stroke-width="0.5"/>')
+    for gy in range(int(math.floor(y_min)), int(math.ceil(y_max)) + 1):
+        _, sy = _world_to_svg(0, gy, x_range, y_range)
+        parts.append(f'<line x1="{_PAD}" y1="{sy:.1f}" x2="{_PAD + _PLOT_W}" y2="{sy:.1f}" stroke="{grid_color}" stroke-width="0.5"/>')
+
+    # axes
+    ax_color = "#374151"
+    ox, oy = _world_to_svg(0, 0, x_range, y_range)
+    parts.append(f'<line x1="{_PAD}" y1="{oy:.1f}" x2="{_PAD + _PLOT_W}" y2="{oy:.1f}" stroke="{ax_color}" stroke-width="1.2"/>')
+    parts.append(f'<line x1="{ox:.1f}" y1="{_PAD}" x2="{ox:.1f}" y2="{_PAD + _PLOT_H}" stroke="{ax_color}" stroke-width="1.2"/>')
+
+    # tick labels
+    tick_font = 'font-size="7" fill="#6b7280" font-family="sans-serif" text-anchor="middle"'
+    for gx in range(int(math.floor(x_min)), int(math.ceil(x_max)) + 1):
+        if gx == 0:
+            continue
+        sx, _ = _world_to_svg(gx, 0, x_range, y_range)
+        parts.append(f'<text x="{sx:.1f}" y="{oy + 11:.1f}" {tick_font}>{gx}</text>')
+    for gy in range(int(math.floor(y_min)), int(math.ceil(y_max)) + 1):
+        if gy == 0:
+            continue
+        _, sy = _world_to_svg(0, gy, x_range, y_range)
+        parts.append(f'<text x="{ox - 10:.1f}" y="{sy + 3:.1f}" {tick_font}>{gy}</text>')
+
+    # plot each curve
+    for curve_idx, (func, color, label) in enumerate(curves):
+        segments = []
+        current_seg = []
+        step = (x_max - x_min) / n_points
+        for i in range(n_points + 1):
+            wx = x_min + i * step
+            try:
+                wy = func(wx)
+                if wy is None or not math.isfinite(wy):
+                    raise ValueError
+            except (ValueError, ZeroDivisionError, OverflowError):
+                if current_seg:
+                    segments.append(current_seg)
+                    current_seg = []
+                continue
+            if wy < y_min - 2 or wy > y_max + 2:
+                if current_seg:
+                    segments.append(current_seg)
+                    current_seg = []
+                continue
+            sx, sy = _world_to_svg(wx, wy, x_range, y_range)
+            current_seg.append((sx, sy))
+        if current_seg:
+            segments.append(current_seg)
+
+        for seg in segments:
+            if len(seg) < 2:
+                continue
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in seg)
+            parts.append(f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round"/>')
+
+        if label:
+            label_y = _PAD + 12 + curve_idx * 14
+            parts.append(
+                f'<text x="{_PAD + 4}" y="{label_y}" font-size="10" fill="{color}" '
+                f'font-family="monospace">{label}</text>'
+            )
+
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Function catalogue
 # ---------------------------------------------------------------------------
@@ -649,7 +740,7 @@ class GraphReader(Exercise):
         graph_svg = _build_svg(func, (a - 1, a + 8), (-5, 5), label=expr_str)
 
         correct = f"x > {_fmt_num(a)}"
-        distractors = [
+        distractors_pool = [
             f"x ≥ {_fmt_num(a)}",
             "x > 0",
             "x ≥ 0",
@@ -657,8 +748,13 @@ class GraphReader(Exercise):
             f"x > {_fmt_num(a + 1)}",
             f"x ≥ {_fmt_num(a - 1)}",
         ]
-        # remove correct from distractors if present, then sample 4
-        distractors = [d for d in distractors if d != correct]
+        # remove correct and duplicates, then sample 4
+        seen = {correct}
+        distractors = []
+        for d in distractors_pool:
+            if d not in seen:
+                seen.add(d)
+                distractors.append(d)
         random.shuffle(distractors)
         distractors = distractors[:4]
 
@@ -691,7 +787,7 @@ class GraphReader(Exercise):
         graph_svg = _build_svg(func, (a - 5, a + 5), (-6, 6), label=expr_str)
 
         correct = f"x ≠ {_fmt_num(a)}"
-        distractors = [
+        distractors_pool = [
             f"x > {_fmt_num(a)}",
             "x ≠ 0",
             "Tutti i reali",
@@ -699,7 +795,12 @@ class GraphReader(Exercise):
             f"x ≠ {_fmt_num(a + 1)}",
             f"x < {_fmt_num(a)}",
         ]
-        distractors = [d for d in distractors if d != correct]
+        seen = {correct}
+        distractors = []
+        for d in distractors_pool:
+            if d not in seen:
+                seen.add(d)
+                distractors.append(d)
         random.shuffle(distractors)
         distractors = distractors[:4]
 
@@ -733,7 +834,7 @@ class GraphReader(Exercise):
         graph_svg = _build_svg(func, (a - 1, a + 8), (-1, 5), label=expr_str)
 
         correct = f"x ≥ {_fmt_num(a)}"
-        distractors = [
+        distractors_pool = [
             f"x > {_fmt_num(a)}",
             "x ≥ 0",
             "Tutti i reali",
@@ -741,7 +842,12 @@ class GraphReader(Exercise):
             f"x ≥ {_fmt_num(a + 1)}",
             f"x > {_fmt_num(a - 1)}",
         ]
-        distractors = [d for d in distractors if d != correct]
+        seen = {correct}
+        distractors = []
+        for d in distractors_pool:
+            if d not in seen:
+                seen.add(d)
+                distractors.append(d)
         random.shuffle(distractors)
         distractors = distractors[:4]
 
@@ -1945,9 +2051,1430 @@ class GraphReader(Exercise):
         }
 
     # ------------------------------------------------------------------
+    # Parameter effect templates
+    # ------------------------------------------------------------------
+
+    def _template_param_quadratic_a(self) -> dict:
+        """Come cambia y = ax² al variare di a?"""
+        a1 = 1
+        a2 = random.choice([2, 3, 4])
+
+        func1 = _quadratic(a1, 0, 0)
+        func2 = _quadratic(a2, 0, 0)
+        expr1 = _expr_quadratic(a1, 0, 0)
+        expr2 = _expr_quadratic(a2, 0, 0)
+
+        graph_svg = _build_svg_multi(
+            [
+                (func1, "#2563eb", expr1),
+                (func2, "#dc2626", expr2),
+            ],
+            x_range=(-4, 4),
+            y_range=(-1, 10),
+        )
+
+        correct = "Si stringe (diventa più stretta)"
+        distractors = [
+            "Si allarga (diventa più larga)",
+            "Si trasla verso l'alto",
+            "Si trasla verso destra",
+            "Si riflette rispetto all'asse x",
+            "Non cambia forma",
+        ]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Quando il coefficiente a in y = ax² aumenta (da {a1} a {a2}), "
+            f"la parabola diventa più stretta. Un valore maggiore di |a| "
+            f"significa che la funzione cresce più rapidamente, comprimendo "
+            f"il grafico verso l'asse y."
+        )
+
+        return {
+            "question": (
+                f"Osserva i grafici di {expr1} (blu) e {expr2} (rosso). "
+                f"Come cambia il grafico di y = ax² quando a aumenta?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Il coefficiente a in y = ax² controlla l'apertura della parabola: "
+                "|a| > 1 la stringe, 0 < |a| < 1 la allarga, a < 0 la capovolge."
+            ),
+        }
+
+    def _template_param_vertical_shift(self) -> dict:
+        """Quale funzione corrisponde alla traslazione verticale mostrata?"""
+        family = random.choice(["quadratic", "abs", "sin"])
+        k_correct = random.choice([-3, -2, -1, 1, 2, 3])
+
+        if family == "quadratic":
+            base_func = _quadratic(1, 0, 0)
+            shifted_func = _quadratic(1, 0, k_correct)
+            base_expr = _expr_quadratic(1, 0, 0)
+            x_range = (-4, 4)
+            y_range = (min(-2, k_correct - 2), max(8, k_correct + 8))
+        elif family == "abs":
+            base_func = _abs_value(1, 0, 0)
+            shifted_func = _abs_value(1, 0, k_correct)
+            base_expr = _expr_abs(1, 0, 0)
+            x_range = (-5, 5)
+            y_range = (min(-2, k_correct - 2), max(6, k_correct + 6))
+        else:
+            base_func = _sin_func(1, 1, 0, 0)
+            shifted_func = _sin_func(1, 1, 0, k_correct)
+            base_expr = _expr_sin(1, 1, 0, 0)
+            x_range = (-7, 7)
+            y_range = (min(-3, k_correct - 2), max(3, k_correct + 2))
+
+        graph_svg = _build_svg_multi(
+            [
+                (base_func, "#2563eb", base_expr),
+                (shifted_func, "#dc2626", "g(x) = ?"),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        direction = "alto" if k_correct > 0 else "basso"
+        correct = f"f(x) {_fmt_num(k_correct, always_sign=True)} (traslazione di {abs(k_correct)} verso {direction})"
+
+        distractor_ks = [v for v in [-3, -2, -1, 1, 2, 3] if v != k_correct]
+        random.shuffle(distractor_ks)
+        distractors = []
+        for dk in distractor_ks[:4]:
+            d_dir = "alto" if dk > 0 else "basso"
+            distractors.append(f"f(x) {_fmt_num(dk, always_sign=True)} (traslazione di {abs(dk)} verso {d_dir})")
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Il grafico rosso è spostato di {abs(k_correct)} unità verso {direction} "
+            f"rispetto al grafico blu. Aggiungere una costante k alla funzione "
+            f"trasla il grafico verticalmente: f(x)+k sale se k > 0, scende se k < 0."
+        )
+
+        return {
+            "question": (
+                f"Il grafico blu è {base_expr}. Il grafico rosso è una traslazione "
+                f"verticale. Quale funzione corrisponde al grafico rosso?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Sommare una costante k a una funzione trasla il grafico verticalmente: "
+                "f(x)+k sposta il grafico di k unità in alto (k > 0) o in basso (k < 0)."
+            ),
+        }
+
+    def _template_param_horizontal_shift(self) -> dict:
+        """Identificare la traslazione orizzontale f(x-h)."""
+        family = random.choice(["quadratic", "abs", "sqrt"])
+        h_correct = random.choice([-3, -2, -1, 1, 2, 3])
+
+        if family == "quadratic":
+            base_func = _quadratic(1, 0, 0)
+            shifted_func = _quadratic(1, h_correct, 0)
+            base_expr = _expr_quadratic(1, 0, 0)
+            x_range = (min(-5, h_correct - 4), max(5, h_correct + 4))
+            y_range = (-1, 10)
+        elif family == "abs":
+            base_func = _abs_value(1, 0, 0)
+            shifted_func = _abs_value(1, h_correct, 0)
+            base_expr = _expr_abs(1, 0, 0)
+            x_range = (min(-5, h_correct - 4), max(5, h_correct + 4))
+            y_range = (-1, 8)
+        else:
+            base_func = _sqrt_func(1, 0, 0)
+            shifted_func = _sqrt_func(1, h_correct, 0)
+            base_expr = _expr_sqrt(1, 0, 0)
+            x_range = (min(-1, h_correct - 1), max(8, h_correct + 8))
+            y_range = (-1, 5)
+
+        graph_svg = _build_svg_multi(
+            [
+                (base_func, "#2563eb", base_expr),
+                (shifted_func, "#dc2626", "g(x) = ?"),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        if h_correct > 0:
+            correct = f"Traslazione di {h_correct} unità a destra"
+        else:
+            correct = f"Traslazione di {abs(h_correct)} unità a sinistra"
+
+        distractors = []
+        if h_correct > 0:
+            distractors.append(f"Traslazione di {h_correct} unità a sinistra")
+            distractors.append(f"Traslazione di {h_correct} unità in alto")
+            distractors.append(f"Traslazione di {h_correct} unità in basso")
+        else:
+            distractors.append(f"Traslazione di {abs(h_correct)} unità a destra")
+            distractors.append(f"Traslazione di {abs(h_correct)} unità in alto")
+            distractors.append(f"Traslazione di {abs(h_correct)} unità in basso")
+        other_h = random.choice([v for v in [1, 2, 3] if v != abs(h_correct)])
+        distractors.append(f"Traslazione di {other_h} unità a destra")
+        distractors.append(f"Traslazione di {other_h} unità a sinistra")
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        dir_text = "destra" if h_correct > 0 else "sinistra"
+        explanation = (
+            f"Il grafico rosso è traslato di {abs(h_correct)} unità a {dir_text} "
+            f"rispetto al grafico blu. La sostituzione x → (x - h) nella funzione "
+            f"trasla il grafico a destra di h unità (se h > 0) o a sinistra di |h| "
+            f"unità (se h < 0). Attenzione: il segno è opposto a quello che appare "
+            f"nella formula!"
+        )
+
+        return {
+            "question": (
+                f"Il grafico blu è {base_expr}. Il grafico rosso è una traslazione "
+                f"orizzontale. Di quanto e in quale direzione è traslato?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Attenzione alla traslazione orizzontale: f(x - h) sposta il grafico "
+                "a DESTRA di h unità. Il segno è opposto a quello che appare nella formula!"
+            ),
+        }
+
+    def _template_param_vertical_stretch(self) -> dict:
+        """Identificare la dilatazione verticale af(x)."""
+        family = random.choice(["quadratic", "sin"])
+        a_factor = random.choice([2, 3])
+
+        if family == "quadratic":
+            base_func = _quadratic(1, 0, 0)
+            stretched_func = _quadratic(a_factor, 0, 0)
+            base_expr = _expr_quadratic(1, 0, 0)
+            stretched_expr = _expr_quadratic(a_factor, 0, 0)
+            x_range = (-4, 4)
+            y_range = (-1, a_factor * 9 + 1)
+        else:
+            base_func = _sin_func(1, 1, 0, 0)
+            stretched_func = _sin_func(a_factor, 1, 0, 0)
+            base_expr = _expr_sin(1, 1, 0, 0)
+            stretched_expr = _expr_sin(a_factor, 1, 0, 0)
+            x_range = (-7, 7)
+            y_range = (-a_factor - 1, a_factor + 1)
+
+        graph_svg = _build_svg_multi(
+            [
+                (base_func, "#2563eb", base_expr),
+                (stretched_func, "#dc2626", stretched_expr),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        correct = f"Dilatazione verticale di fattore {a_factor}"
+        distractors = [
+            f"Dilatazione orizzontale di fattore {a_factor}",
+            f"Traslazione verticale di {a_factor} unità",
+            "Riflessione rispetto all'asse x",
+            f"Dilatazione verticale di fattore 1/{a_factor}",
+            f"Compressione orizzontale di fattore {a_factor}",
+        ]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Il grafico rosso ({stretched_expr}) è ottenuto moltiplicando la funzione "
+            f"base per {a_factor}. Ogni valore y viene moltiplicato per {a_factor}, "
+            f"quindi il grafico si 'allunga' verticalmente di un fattore {a_factor}."
+        )
+
+        return {
+            "question": (
+                f"Osserva i grafici di f(x) (blu) e g(x) (rosso). "
+                f"Quale trasformazione porta da f(x) a g(x)?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Moltiplicare una funzione per a > 1 dilata il grafico verticalmente. "
+                "Per 0 < a < 1 lo comprime. Il fattore a è detto fattore di scala verticale."
+            ),
+        }
+
+    def _template_param_reflection(self) -> dict:
+        """Identificare riflessione -f(x) o f(-x)."""
+        reflection_type = random.choice(["x_axis", "y_axis"])
+        family = random.choice(["quadratic_shifted", "exponential", "sqrt"])
+
+        if family == "quadratic_shifted":
+            h = random.choice([1, 2])
+            k = random.choice([1, 2])
+            base_func = _quadratic(1, h, k)
+            base_expr = _expr_quadratic(1, h, k)
+            if reflection_type == "x_axis":
+                refl_func = _quadratic(-1, h, -k)
+                x_range = (-5, 5)
+                yr = max(abs(k) + 5, 6)
+                y_range = (-yr, yr)
+            else:
+                refl_func = _quadratic(1, -h, k)
+                x_range = (-5, 5)
+                yr = max(abs(k) + 5, 6)
+                y_range = (-1, yr)
+        elif family == "exponential":
+            base_func = _exponential(1, 2, 0)
+            base_expr = _expr_exponential(1, 2, 0)
+            if reflection_type == "x_axis":
+                refl_func = _exponential(-1, 2, 0)
+                x_range = (-3, 4)
+                y_range = (-10, 10)
+            else:
+                refl_func = lambda x: 2 ** (-x)
+                x_range = (-4, 4)
+                y_range = (-1, 10)
+        else:
+            base_func = _sqrt_func(1, 0, 0)
+            base_expr = _expr_sqrt(1, 0, 0)
+            if reflection_type == "x_axis":
+                refl_func = _sqrt_func(-1, 0, 0)
+                x_range = (-1, 8)
+                y_range = (-4, 4)
+            else:
+                refl_func = lambda x: math.sqrt(-x) if -x >= 0 else None
+                x_range = (-8, 1)
+                y_range = (-1, 4)
+
+        graph_svg = _build_svg_multi(
+            [
+                (base_func, "#2563eb", base_expr),
+                (refl_func, "#dc2626", "g(x) = ?"),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        if reflection_type == "x_axis":
+            correct = "g(x) = -f(x) (riflessione rispetto all'asse x)"
+            wrong_refl = "g(x) = f(-x) (riflessione rispetto all'asse y)"
+        else:
+            correct = "g(x) = f(-x) (riflessione rispetto all'asse y)"
+            wrong_refl = "g(x) = -f(x) (riflessione rispetto all'asse x)"
+
+        distractors = [
+            wrong_refl,
+            "g(x) = f(x) + 1 (traslazione verticale)",
+            "g(x) = f(x - 1) (traslazione orizzontale)",
+            "g(x) = 2f(x) (dilatazione verticale)",
+            "g(x) = -f(-x) (doppia riflessione)",
+        ]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        if reflection_type == "x_axis":
+            expl = (
+                "Il grafico rosso è il simmetrico del blu rispetto all'asse x. "
+                "Questo si ottiene cambiando il segno a tutti i valori y: g(x) = -f(x). "
+                "Ogni punto (x, y) diventa (x, -y)."
+            )
+        else:
+            expl = (
+                "Il grafico rosso è il simmetrico del blu rispetto all'asse y. "
+                "Questo si ottiene sostituendo x con -x: g(x) = f(-x). "
+                "Ogni punto (x, y) diventa (-x, y)."
+            )
+
+        return {
+            "question": (
+                f"Il grafico blu è {base_expr}. Quale trasformazione descrive "
+                f"il grafico rosso?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": expl,
+            "did_you_know": (
+                "Riflessione rispetto all'asse x: -f(x) cambia il segno delle y. "
+                "Riflessione rispetto all'asse y: f(-x) 'specchia' il grafico "
+                "orizzontalmente. Sono trasformazioni diverse!"
+            ),
+        }
+
+    def _template_param_combined(self) -> dict:
+        """Identificare trasformazioni combinate af(x-h)+k."""
+        a_coeff = random.choice([-1, 2, -2])
+        h_val = random.choice([-2, -1, 1, 2])
+        k_val = random.choice([-2, -1, 1, 2])
+
+        base_func = _quadratic(1, 0, 0)
+        transformed_func = _quadratic(a_coeff, h_val, k_val)
+        base_expr = _expr_quadratic(1, 0, 0)
+        trans_expr = _expr_quadratic(a_coeff, h_val, k_val)
+
+        yr = max(abs(k_val) + abs(a_coeff) * 4 + 2, 8)
+        x_range = (min(-5, h_val - 4), max(5, h_val + 4))
+        y_range = (-yr, yr)
+
+        graph_svg = _build_svg_multi(
+            [
+                (base_func, "#2563eb", base_expr),
+                (transformed_func, "#dc2626", "g(x) = ?"),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        correct = trans_expr
+
+        # Generate plausible wrong formulas
+        wrong_formulas = set()
+        wrong_formulas.add(_expr_quadratic(a_coeff, -h_val, k_val))
+        wrong_formulas.add(_expr_quadratic(a_coeff, h_val, -k_val))
+        wrong_formulas.add(_expr_quadratic(-a_coeff, h_val, k_val))
+        wrong_formulas.add(_expr_quadratic(a_coeff, h_val + 1, k_val))
+        wrong_formulas.add(_expr_quadratic(a_coeff, h_val, k_val + 1))
+        wrong_formulas.add(_expr_quadratic(1, h_val, k_val))
+        wrong_formulas.discard(correct)
+        distractors = list(wrong_formulas)
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        while len(distractors) < 4:
+            fallback_k = k_val + len(distractors) + 2
+            d = _expr_quadratic(a_coeff, h_val, fallback_k)
+            if d != correct and d not in distractors:
+                distractors.append(d)
+
+        options_raw = [correct] + distractors[:4]
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        transforms = []
+        if a_coeff < 0:
+            transforms.append("riflessione rispetto all'asse x")
+        if abs(a_coeff) != 1:
+            transforms.append(f"dilatazione verticale di fattore {abs(a_coeff)}")
+        if h_val != 0:
+            dir_h = "destra" if h_val > 0 else "sinistra"
+            transforms.append(f"traslazione di {abs(h_val)} unità a {dir_h}")
+        if k_val != 0:
+            dir_k = "alto" if k_val > 0 else "basso"
+            transforms.append(f"traslazione di {abs(k_val)} unità in {dir_k}")
+
+        explanation = (
+            f"Il grafico rosso è ottenuto applicando le seguenti trasformazioni "
+            f"a {base_expr}: {', '.join(transforms)}. "
+            f"La formula risultante è {trans_expr}."
+        )
+
+        return {
+            "question": (
+                f"Il grafico blu è f(x) = x². Il grafico rosso è una versione "
+                f"trasformata. Quale formula descrive il grafico rosso?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Le trasformazioni si compongono: af(x-h)+k applica in ordine "
+                "traslazione orizzontale di h, dilatazione/riflessione verticale "
+                "di fattore a, e traslazione verticale di k."
+            ),
+        }
+
+    def _template_param_family_effect(self) -> dict:
+        """Effetto dei parametri su famiglie specifiche (sinusoidale, esponenziale)."""
+        variant = random.choice(["sin_frequency", "sin_amplitude", "exp_base"])
+
+        if variant == "sin_amplitude":
+            a1 = 1
+            a2 = random.choice([2, 3])
+            func1 = _sin_func(a1, 1, 0, 0)
+            func2 = _sin_func(a2, 1, 0, 0)
+            expr1 = _expr_sin(a1, 1, 0, 0)
+            expr2 = _expr_sin(a2, 1, 0, 0)
+            x_range = (-7, 7)
+            y_range = (-a2 - 1, a2 + 1)
+
+            correct = f"L'ampiezza aumenta da {a1} a {a2}"
+            distractors = [
+                "Il periodo raddoppia",
+                "Il periodo si dimezza",
+                f"La funzione si trasla di {a2} unità in alto",
+                "La funzione si riflette rispetto all'asse x",
+                f"L'ampiezza diminuisce da {a2} a {a1}",
+            ]
+            question_text = (
+                f"Osserva i grafici di {expr1} (blu) e {expr2} (rosso). "
+                f"Cosa cambia passando dalla prima alla seconda funzione?"
+            )
+            expl = (
+                f"Moltiplicare sin(x) per {a2} aumenta l'ampiezza da {a1} a {a2}. "
+                f"Il periodo resta invariato (2π). L'ampiezza è il valore massimo "
+                f"raggiunto dalla funzione."
+            )
+
+        elif variant == "sin_frequency":
+            b1 = 1
+            b2 = 2
+            func1 = _sin_func(1, b1, 0, 0)
+            func2 = _sin_func(1, b2, 0, 0)
+            expr1 = _expr_sin(1, b1, 0, 0)
+            expr2 = _expr_sin(1, b2, 0, 0)
+            x_range = (-7, 7)
+            y_range = (-2, 2)
+            period1 = round(2 * math.pi / b1, 2)
+            period2 = round(2 * math.pi / b2, 2)
+
+            correct = f"Il periodo si dimezza (da {period1} a {period2})"
+            distractors = [
+                "L'ampiezza raddoppia",
+                "Il periodo raddoppia",
+                "La funzione si trasla a destra",
+                "L'ampiezza si dimezza",
+                "La funzione si riflette rispetto all'asse y",
+            ]
+            question_text = (
+                f"Osserva i grafici di {expr1} (blu) e {expr2} (rosso). "
+                f"Cosa cambia passando dalla prima alla seconda funzione?"
+            )
+            expl = (
+                f"In sin(bx), il parametro b influenza il periodo: "
+                f"periodo = 2π/b. Passando da b={b1} a b={b2}, il periodo "
+                f"si dimezza da {period1} a {period2}. L'ampiezza resta invariata."
+            )
+
+        else:  # exp_base
+            b1 = 2
+            b2 = 3
+            func1 = _exponential(1, b1, 0)
+            func2 = _exponential(1, b2, 0)
+            expr1 = _expr_exponential(1, b1, 0)
+            expr2 = _expr_exponential(1, b2, 0)
+            x_range = (-2, 4)
+            y_range = (-1, 15)
+
+            correct = "La funzione cresce più rapidamente"
+            distractors = [
+                "La funzione cresce più lentamente",
+                "L'asintoto orizzontale si sposta in alto",
+                "La funzione si trasla a destra",
+                "L'intersezione con l'asse y cambia",
+                "La funzione diventa decrescente",
+            ]
+            question_text = (
+                f"Osserva i grafici di {expr1} (blu) e {expr2} (rosso). "
+                f"Come cambia il comportamento passando da base {b1} a base {b2}?"
+            )
+            expl = (
+                f"Aumentare la base da {b1} a {b2} in y = b^x rende la crescita "
+                f"più rapida. Entrambe le funzioni passano per (0, 1) e hanno "
+                f"asintoto y = 0, ma {b2}^x supera {b1}^x per x > 0."
+            )
+
+        graph_svg = _build_svg_multi(
+            [
+                (func1, "#2563eb", expr1),
+                (func2, "#dc2626", expr2),
+            ],
+            x_range=x_range,
+            y_range=y_range,
+        )
+
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        return {
+            "question": question_text,
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": expl,
+            "did_you_know": (
+                "Nelle funzioni sinusoidali y = a·sin(bx), a controlla l'ampiezza "
+                "e b controlla la frequenza (periodo = 2π/b). Nelle esponenziali "
+                "y = b^x, la base b controlla la velocità di crescita."
+            ),
+        }
+
+    def _template_param_identify_formula(self) -> dict:
+        """Dato un grafico trasformato, identificare la formula corretta."""
+        variant = random.choice(["quadratic", "sin", "abs"])
+
+        if variant == "quadratic":
+            a = random.choice([-1, 1, 2])
+            h = random.choice([-2, -1, 1, 2])
+            k = random.choice([-2, -1, 1, 2])
+            func = _quadratic(a, h, k)
+            correct_expr = _expr_quadratic(a, h, k)
+            yr = max(abs(k) + abs(a) * 4 + 2, 8)
+            x_range = (h - 5, h + 5)
+            y_range = (-yr, yr)
+            wrong_exprs = set()
+            wrong_exprs.add(_expr_quadratic(a, -h, k))
+            wrong_exprs.add(_expr_quadratic(a, h, -k))
+            wrong_exprs.add(_expr_quadratic(-a, h, k))
+            wrong_exprs.add(_expr_quadratic(a, h + 1, k))
+            wrong_exprs.add(_expr_quadratic(a, h, k + 1))
+            wrong_exprs.add(_expr_quadratic(a, h - 1, k - 1))
+        elif variant == "sin":
+            a = random.choice([1, 2])
+            b = random.choice([1, 2])
+            k = random.choice([-1, 0, 1])
+            func = _sin_func(a, b, 0, k)
+            correct_expr = _expr_sin(a, b, 0, k)
+            x_range = (-7, 7)
+            y_range = (-a - abs(k) - 1, a + abs(k) + 1)
+            wrong_exprs = set()
+            wrong_exprs.add(_expr_sin(a, b, 0, -k) if k != 0 else _expr_sin(a, b, 0, 1))
+            wrong_exprs.add(_expr_sin(a + 1, b, 0, k))
+            wrong_exprs.add(_expr_sin(a, b + 1, 0, k))
+            wrong_exprs.add(_expr_cos(a, b, 0, k))
+            wrong_exprs.add(_expr_sin(a, b, 1, k))
+        else:
+            a = random.choice([1, 2])
+            h = random.choice([-2, -1, 1, 2])
+            k = random.choice([-1, 0, 1])
+            func = _abs_value(a, h, k)
+            correct_expr = _expr_abs(a, h, k)
+            x_range = (-6, 6)
+            y_range = (min(-2, k - 2), max(6, a * 4 + k + 1))
+            wrong_exprs = set()
+            wrong_exprs.add(_expr_abs(a, -h, k))
+            wrong_exprs.add(_expr_abs(a, h, -k) if k != 0 else _expr_abs(a, h, 1))
+            wrong_exprs.add(_expr_abs(-a, h, k))
+            wrong_exprs.add(_expr_abs(a, h + 1, k))
+            wrong_exprs.add(_expr_abs(a + 1, h, k))
+
+        wrong_exprs.discard(correct_expr)
+        distractors = list(wrong_exprs)
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        while len(distractors) < 4:
+            filler = f"y = {random.randint(1, 5)}x + {random.randint(-3, 3)}"
+            if filler != correct_expr and filler not in distractors:
+                distractors.append(filler)
+
+        graph_svg = _build_svg(func, x_range, y_range, label="f(x) = ?")
+
+        options_raw = [correct_expr] + distractors[:4]
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Analizzando il grafico: la forma della curva, la posizione del vertice "
+            f"o punto caratteristico, e l'orientamento permettono di identificare "
+            f"la formula corretta: {correct_expr}."
+        )
+
+        return {
+            "question": "Osserva il grafico. Quale formula descrive la funzione mostrata?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Per identificare una funzione dal grafico, cerca: la forma generale "
+                "(parabola, sinusoide, ecc.), la posizione di vertici o punti notevoli, "
+                "eventuali traslazioni e riflessioni rispetto al grafico base."
+            ),
+        }
+
+    # ------------------------------------------------------------------
+    # Functional equations / inequalities from graphs
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _find_intersections_with_value(func, a_val, x_range, n_samples=2000):
+        """Find x-values where func(x) approx a_val by detecting sign changes."""
+        x_min, x_max = x_range
+        step = (x_max - x_min) / n_samples
+        crossings = []
+        prev_diff = None
+        prev_x = None
+        for i in range(n_samples + 1):
+            x = x_min + i * step
+            try:
+                y = func(x)
+                if y is None or not math.isfinite(y):
+                    prev_diff = None
+                    prev_x = None
+                    continue
+            except (ValueError, ZeroDivisionError, OverflowError):
+                prev_diff = None
+                prev_x = None
+                continue
+            diff = y - a_val
+            if prev_diff is not None:
+                if abs(diff) < 1e-9:
+                    crossings.append(x)
+                elif prev_diff * diff < 0:
+                    lo, hi = prev_x, x
+                    lo_val = prev_diff
+                    for _ in range(30):
+                        mid = (lo + hi) / 2
+                        try:
+                            mid_y = func(mid)
+                            if mid_y is None or not math.isfinite(mid_y):
+                                break
+                            mid_diff = mid_y - a_val
+                        except (ValueError, ZeroDivisionError, OverflowError):
+                            break
+                        if lo_val * mid_diff < 0:
+                            hi = mid
+                        else:
+                            lo = mid
+                            lo_val = mid_diff
+                    crossings.append((lo + hi) / 2)
+            prev_diff = diff
+            prev_x = x
+        rounded = []
+        for c in crossings:
+            r = round(c, 1)
+            if not rounded or abs(r - rounded[-1]) > 0.05:
+                rounded.append(r)
+        return rounded
+
+    @staticmethod
+    def _add_horizontal_line(svg, a_val, x_range, y_range, color="#e74c3c"):
+        """Add a dashed horizontal line at y=a_val to an SVG string."""
+        ox_start, oy = _world_to_svg(x_range[0], a_val, x_range, y_range)
+        ox_end, _ = _world_to_svg(x_range[1], a_val, x_range, y_range)
+        line = (
+            f'<line x1="{ox_start:.1f}" y1="{oy:.1f}" '
+            f'x2="{ox_end:.1f}" y2="{oy:.1f}" '
+            f'stroke="{color}" stroke-width="1.5" stroke-dasharray="6,4"/>'
+        )
+        label = (
+            f'<text x="{ox_end - 5:.1f}" y="{oy - 5:.1f}" '
+            f'font-size="9" fill="{color}" text-anchor="end">'
+            f'y = {_fmt_num(a_val)}</text>'
+        )
+        return svg.replace("</svg>", f"{line}{label}</svg>")
+
+    @staticmethod
+    def _format_x_set(values):
+        """Format a list of x-values as 'x = v1, x = v2, ...'."""
+        formatted = []
+        for v in sorted(values):
+            iv = int(v) if v == int(v) else v
+            formatted.append(f"x = {_fmt_num(iv)}")
+        return ", ".join(formatted)
+
+    @staticmethod
+    def _nice_int(v):
+        """Return int if value is close to integer, else rounded float."""
+        if abs(v - round(v)) < 0.05:
+            return int(round(v))
+        return round(v, 1)
+
+    def _template_equation_simple(self) -> dict:
+        """Per quali valori di x si ha f(x) = a? (Level 1)"""
+        h = random.choice([-2, -1, 0, 1, 2])
+        k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        a_coeff = random.choice([-1, 1])
+        func = _quadratic(a_coeff, h, k)
+        expr_str = _expr_quadratic(a_coeff, h, k)
+
+        offset = random.choice([1, 2, 3])
+        a_val = k + a_coeff * offset * offset
+
+        x_range = (-5, 5)
+        yr = max(abs(k) + 6, abs(a_val) + 2, 8)
+        y_range = (-yr, yr)
+
+        x_sols = sorted([h - offset, h + offset])
+        correct = self._format_x_set(x_sols)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+        graph_svg = self._add_horizontal_line(graph_svg, a_val, x_range, y_range)
+
+        distractors = []
+        candidates = [
+            self._format_x_set([x_sols[0]]),
+            self._format_x_set([x_sols[1]]),
+            self._format_x_set([x_sols[0] - 1, x_sols[1] + 1]),
+            self._format_x_set([x_sols[0] + 1, x_sols[1] - 1]),
+            self._format_x_set([h]),
+            "Nessuna soluzione",
+            self._format_x_set([x_sols[0] - 1, x_sols[1]]),
+            self._format_x_set([x_sols[0], x_sols[1] + 1]),
+        ]
+        for c in candidates:
+            if c != correct and c not in distractors:
+                distractors.append(c)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Per trovare i valori di x tali che f(x) = {_fmt_num(a_val)}, "
+            f"si traccia la retta orizzontale y = {_fmt_num(a_val)} e si leggono "
+            f"le ascisse dei punti di intersezione con il grafico. "
+            f"Le soluzioni sono {correct}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Per quali valori di x si ha f(x) = {_fmt_num(a_val)}?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Risolvere graficamente f(x) = a equivale a trovare le intersezioni "
+                "tra il grafico di f e la retta orizzontale y = a."
+            ),
+        }
+
+    def _template_equation_count(self) -> dict:
+        """Quante soluzioni ha l'equazione f(x) = a? (Level 1)"""
+        variant = random.choice(["quadratic", "abs"])
+
+        if variant == "quadratic":
+            h = random.choice([-2, -1, 0, 1, 2])
+            k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+            a_coeff = random.choice([-1, 1])
+            func = _quadratic(a_coeff, h, k)
+            expr_str = _expr_quadratic(a_coeff, h, k)
+            x_range = (-5, 5)
+            yr = max(abs(k) + 6, 8)
+            y_range = (-yr, yr)
+
+            case = random.choice(["zero", "one", "two"])
+            if a_coeff > 0:
+                if case == "zero":
+                    a_val = k - random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    a_val = k
+                    n_solutions = 1
+                else:
+                    a_val = k + random.randint(1, 4)
+                    n_solutions = 2
+            else:
+                if case == "zero":
+                    a_val = k + random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    a_val = k
+                    n_solutions = 1
+                else:
+                    a_val = k - random.randint(1, 4)
+                    n_solutions = 2
+        else:
+            a_abs = random.choice([1, 2])
+            h = random.choice([-2, -1, 0, 1, 2])
+            k = random.choice([-3, -2, -1, 0, 1, 2])
+            func = _abs_value(a_abs, h, k)
+            expr_str = _expr_abs(a_abs, h, k)
+            x_range = (-5, 5)
+            y_range = (-5, 8)
+
+            case = random.choice(["zero", "one", "two"])
+            if a_abs > 0:
+                if case == "zero":
+                    a_val = k - random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    a_val = k
+                    n_solutions = 1
+                else:
+                    a_val = k + random.randint(1, 4)
+                    n_solutions = 2
+            else:
+                if case == "zero":
+                    a_val = k + random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    a_val = k
+                    n_solutions = 1
+                else:
+                    a_val = k - random.randint(1, 4)
+                    n_solutions = 2
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+        graph_svg = self._add_horizontal_line(graph_svg, a_val, x_range, y_range)
+
+        if n_solutions == 0:
+            correct = "Nessuna soluzione"
+        elif n_solutions == 1:
+            correct = "1 soluzione"
+        else:
+            correct = f"{n_solutions} soluzioni"
+
+        all_count_options = [
+            "Nessuna soluzione", "1 soluzione", "2 soluzioni",
+            "3 soluzioni", "Infinite soluzioni",
+        ]
+        distractors = [o for o in all_count_options if o != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Si traccia la retta orizzontale y = {_fmt_num(a_val)} e si contano "
+            f"le intersezioni con il grafico di {expr_str}. "
+            f"In questo caso ci sono {n_solutions} intersezioni."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Quante soluzioni ha l'equazione f(x) = {_fmt_num(a_val)}?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Il numero di soluzioni di f(x) = a si legge contando i punti "
+                "in cui la retta y = a interseca il grafico della funzione."
+            ),
+        }
+
+    def _template_inequality_interval(self) -> dict:
+        """Per quali valori di x si ha f(x) > a (o f(x) < a)? (Level 2)"""
+        r1 = random.randint(-4, 0)
+        r2 = r1 + random.randint(2, 5)
+        a_coeff = random.choice([-1, 1])
+
+        def func(x):
+            return a_coeff * (x - r1) * (x - r2)
+
+        ea = a_coeff
+        eb = -a_coeff * (r1 + r2)
+        ec = a_coeff * r1 * r2
+        expr_str = _expr_quadratic_standard(ea, eb, ec)
+
+        a_val = 0
+        s1, s2 = r1, r2
+        ineq_type = random.choice([">", "<"])
+
+        x_range = (min(r1, r2) - 3, max(r1, r2) + 3)
+        vertex_x = (r1 + r2) / 2
+        vertex_y = func(vertex_x)
+        yr = max(abs(vertex_y) + 2, 6)
+        y_range = (-yr, yr)
+
+        if a_coeff > 0:
+            if ineq_type == ">":
+                correct = f"x \u2208 (-\u221e, {_fmt_num(s1)}) \u222a ({_fmt_num(s2)}, +\u221e)"
+            else:
+                correct = f"x \u2208 ({_fmt_num(s1)}, {_fmt_num(s2)})"
+        else:
+            if ineq_type == ">":
+                correct = f"x \u2208 ({_fmt_num(s1)}, {_fmt_num(s2)})"
+            else:
+                correct = f"x \u2208 (-\u221e, {_fmt_num(s1)}) \u222a ({_fmt_num(s2)}, +\u221e)"
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+        graph_svg = self._add_horizontal_line(graph_svg, a_val, x_range, y_range)
+
+        distractors = [
+            f"x \u2208 ({_fmt_num(s1)}, {_fmt_num(s2)})",
+            f"x \u2208 (-\u221e, {_fmt_num(s1)}) \u222a ({_fmt_num(s2)}, +\u221e)",
+            f"x \u2208 [{_fmt_num(s1)}, {_fmt_num(s2)}]",
+            f"x \u2208 (-\u221e, {_fmt_num(s1)}] \u222a [{_fmt_num(s2)}, +\u221e)",
+            f"x \u2208 ({_fmt_num(s1 - 1)}, {_fmt_num(s2 + 1)})",
+            f"x \u2208 (-\u221e, {_fmt_num(s2)})",
+            "Tutti i reali",
+            "Nessun valore di x",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        symbol = ">" if ineq_type == ">" else "<"
+        explanation = (
+            f"Per risolvere f(x) {symbol} {_fmt_num(a_val)}, si trovano i punti "
+            f"dove f(x) = {_fmt_num(a_val)} (intersezioni con y = {_fmt_num(a_val)}): "
+            f"x = {_fmt_num(s1)} e x = {_fmt_num(s2)}. "
+            f"Osservando il grafico, f(x) {symbol} {_fmt_num(a_val)} per {correct}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Per quali valori di x si ha f(x) {symbol} {_fmt_num(a_val)}?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Per risolvere graficamente una disequazione f(x) > a, "
+                "si individuano le intersezioni con la retta y = a e si "
+                "osserva dove il grafico sta sopra (o sotto) la retta."
+            ),
+        }
+
+    def _template_inequality_sign(self) -> dict:
+        """Per quali valori di x si ha f(x) >= 0? (Level 2, special case a=0)"""
+        r1 = random.randint(-4, 0)
+        r2 = r1 + random.randint(2, 5)
+        a_coeff = random.choice([-1, 1])
+
+        def func(x):
+            return a_coeff * (x - r1) * (x - r2)
+
+        ea = a_coeff
+        eb = -a_coeff * (r1 + r2)
+        ec = a_coeff * r1 * r2
+        expr_str = _expr_quadratic_standard(ea, eb, ec)
+
+        x_range = (min(r1, r2) - 3, max(r1, r2) + 3)
+        vertex_x = (r1 + r2) / 2
+        vertex_y = func(vertex_x)
+        yr = max(abs(vertex_y) + 2, 6)
+        y_range = (-yr, yr)
+
+        ineq = random.choice(["\u2265", "\u2264"])
+
+        if a_coeff > 0:
+            if ineq == "\u2265":
+                correct = f"x \u2208 (-\u221e, {_fmt_num(r1)}] \u222a [{_fmt_num(r2)}, +\u221e)"
+            else:
+                correct = f"x \u2208 [{_fmt_num(r1)}, {_fmt_num(r2)}]"
+        else:
+            if ineq == "\u2265":
+                correct = f"x \u2208 [{_fmt_num(r1)}, {_fmt_num(r2)}]"
+            else:
+                correct = f"x \u2208 (-\u221e, {_fmt_num(r1)}] \u222a [{_fmt_num(r2)}, +\u221e)"
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+        ox_start, oy = _world_to_svg(x_range[0], 0, x_range, y_range)
+        ox_end, _ = _world_to_svg(x_range[1], 0, x_range, y_range)
+        axis_highlight = (
+            f'<line x1="{ox_start:.1f}" y1="{oy:.1f}" '
+            f'x2="{ox_end:.1f}" y2="{oy:.1f}" '
+            f'stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.5"/>'
+        )
+        graph_svg = graph_svg.replace("</svg>", f"{axis_highlight}</svg>")
+
+        distractors = [
+            f"x \u2208 ({_fmt_num(r1)}, {_fmt_num(r2)})",
+            f"x \u2208 (-\u221e, {_fmt_num(r1)}) \u222a ({_fmt_num(r2)}, +\u221e)",
+            f"x \u2208 [{_fmt_num(r1)}, {_fmt_num(r2)}]",
+            f"x \u2208 (-\u221e, {_fmt_num(r1)}] \u222a [{_fmt_num(r2)}, +\u221e)",
+            f"x \u2208 ({_fmt_num(r1 - 1)}, {_fmt_num(r2 + 1)})",
+            "Tutti i reali",
+            "Nessun valore di x",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        direction = "verso l'alto" if a_coeff > 0 else "verso il basso"
+        explanation = (
+            f"La parabola {expr_str} si apre {direction} con zeri in "
+            f"x = {_fmt_num(r1)} e x = {_fmt_num(r2)}. "
+            f"f(x) {ineq} 0 per {correct}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Per quali valori di x si ha f(x) {ineq} 0?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Lo studio del segno di una funzione e' uno strumento fondamentale: "
+                "basta osservare dove il grafico sta sopra o sotto l'asse x."
+            ),
+        }
+
+    def _build_two_func_svg(self, f_func, f_label, g_func, g_label, x_range, y_range):
+        """Build SVG showing two function curves (blue f, red g)."""
+        svg = _build_svg(f_func, x_range, y_range, color="#2563eb", label=f"f(x): {f_label}")
+        n_pts = 120
+        x_min_r, x_max_r = x_range
+        step = (x_max_r - x_min_r) / n_pts
+        segments = []
+        current_seg = []
+        for i in range(n_pts + 1):
+            wx = x_min_r + i * step
+            try:
+                wy = g_func(wx)
+                if wy is None or not math.isfinite(wy):
+                    raise ValueError
+            except (ValueError, ZeroDivisionError, OverflowError):
+                if current_seg:
+                    segments.append(current_seg)
+                    current_seg = []
+                continue
+            if wy < y_range[0] - 2 or wy > y_range[1] + 2:
+                if current_seg:
+                    segments.append(current_seg)
+                    current_seg = []
+                continue
+            sx, sy = _world_to_svg(wx, wy, x_range, y_range)
+            current_seg.append((sx, sy))
+        if current_seg:
+            segments.append(current_seg)
+
+        g_lines = []
+        for seg in segments:
+            if len(seg) < 2:
+                continue
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in seg)
+            g_lines.append(
+                f'<polyline points="{pts}" fill="none" stroke="#dc2626" '
+                f'stroke-width="2" stroke-linecap="round"/>'
+            )
+        g_label_svg = (
+            f'<text x="{_PAD + 4}" y="{_PAD + 24}" font-size="10" '
+            f'fill="#dc2626" font-family="monospace">g(x): {g_label}</text>'
+        )
+        extra = "".join(g_lines) + g_label_svg
+        return svg.replace("</svg>", f"{extra}</svg>")
+
+    def _make_two_func_problem(self):
+        """Create f (linear) and g (quadratic) that intersect at known integer points."""
+        x1 = random.choice([-3, -2, -1, 0])
+        x2 = x1 + random.randint(2, 4)
+
+        m = random.choice([-2, -1, 0, 1, 2])
+        q = random.choice([-2, -1, 0, 1, 2])
+        f_func = _linear(m, q)
+        f_expr = _expr_linear(m, q) if m != 0 else "y = " + _fmt_num(q)
+
+        a_g = random.choice([-1, 1])
+
+        def g_func(x):
+            return a_g * (x - x1) * (x - x2) + f_func(x)
+
+        ea = a_g
+        eb = -a_g * (x1 + x2) + m
+        ec = a_g * x1 * x2 + q
+        g_expr = _expr_quadratic_standard(ea, eb, ec)
+
+        x_range = (min(x1, x2) - 3, max(x1, x2) + 3)
+        test_ys = [f_func(x) for x in range(int(x_range[0]), int(x_range[1]) + 1)]
+        test_ys += [g_func(x) for x in range(int(x_range[0]), int(x_range[1]) + 1)]
+        yr = max(abs(min(test_ys)), abs(max(test_ys)), 6) + 2
+        y_range = (-yr, yr)
+
+        return f_func, f_expr, g_func, g_expr, x1, x2, a_g, x_range, y_range
+
+    def _template_equation_two_functions(self) -> dict:
+        """Per quali valori di x si ha f(x) = g(x)? (Level 3)"""
+        f_func, f_expr, g_func, g_expr, x1, x2, a_g, x_range, y_range = (
+            self._make_two_func_problem()
+        )
+
+        f_label = f_expr[4:] if f_expr.startswith("y = ") else f_expr
+        g_label = g_expr[6:] if g_expr.startswith("f(x) =") else g_expr
+        svg = self._build_two_func_svg(f_func, f_label, g_func, g_label, x_range, y_range)
+
+        correct = self._format_x_set([x1, x2])
+
+        distractors = [
+            self._format_x_set([x1]),
+            self._format_x_set([x2]),
+            self._format_x_set([x1 - 1, x2 + 1]),
+            self._format_x_set([x1 + 1, x2 - 1]),
+            "Nessuna soluzione",
+            self._format_x_set([x1 - 1, x2]),
+            self._format_x_set([x1, x2 + 1]),
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Le soluzioni di f(x) = g(x) corrispondono alle ascisse dei punti "
+            f"di intersezione dei due grafici. Osservando il grafico, le curve "
+            f"si intersecano per {correct}."
+        )
+
+        return {
+            "question": (
+                f"Il grafico mostra f(x) (blu) e g(x) (rosso), con "
+                f"f(x) = {f_label} e {g_expr}. "
+                f"Per quali valori di x si ha f(x) = g(x)?"
+            ),
+            "graph_data": svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Risolvere f(x) = g(x) graficamente equivale a trovare le ascisse "
+                "dei punti di intersezione dei due grafici."
+            ),
+        }
+
+    def _template_inequality_two_functions(self) -> dict:
+        """Per quali valori di x si ha f(x) > g(x)? (Level 3)"""
+        f_func, f_expr, g_func, g_expr, x1, x2, a_g, x_range, y_range = (
+            self._make_two_func_problem()
+        )
+
+        # f(x) - g(x) = -a_g * (x - x1)(x - x2)
+        if -a_g > 0:
+            correct = f"x \u2208 (-\u221e, {_fmt_num(x1)}) \u222a ({_fmt_num(x2)}, +\u221e)"
+        else:
+            correct = f"x \u2208 ({_fmt_num(x1)}, {_fmt_num(x2)})"
+
+        f_label = f_expr[4:] if f_expr.startswith("y = ") else f_expr
+        g_label = g_expr[6:] if g_expr.startswith("f(x) =") else g_expr
+        svg = self._build_two_func_svg(f_func, f_label, g_func, g_label, x_range, y_range)
+
+        distractors = [
+            f"x \u2208 ({_fmt_num(x1)}, {_fmt_num(x2)})",
+            f"x \u2208 (-\u221e, {_fmt_num(x1)}) \u222a ({_fmt_num(x2)}, +\u221e)",
+            f"x \u2208 [{_fmt_num(x1)}, {_fmt_num(x2)}]",
+            f"x \u2208 (-\u221e, {_fmt_num(x1)}] \u222a [{_fmt_num(x2)}, +\u221e)",
+            f"x \u2208 ({_fmt_num(x1 - 1)}, {_fmt_num(x2 + 1)})",
+            "Tutti i reali",
+            "Nessun valore di x",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Per risolvere f(x) > g(x), si osserva dove il grafico di f (blu) "
+            f"sta sopra il grafico di g (rosso). Le curve si intersecano in "
+            f"x = {_fmt_num(x1)} e x = {_fmt_num(x2)}. "
+            f"f(x) > g(x) per {correct}."
+        )
+
+        return {
+            "question": (
+                f"Il grafico mostra f(x) (blu) e g(x) (rosso), con "
+                f"f(x) = {f_label} e {g_expr}. "
+                f"Per quali valori di x si ha f(x) > g(x)?"
+            ),
+            "graph_data": svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Per risolvere graficamente f(x) > g(x), si osserva dove il "
+                "grafico di f sta sopra quello di g."
+            ),
+        }
+
+    def _template_equation_solutions_range(self) -> dict:
+        """Quante soluzioni ha f(x) = a nell'intervallo [c, d]? (Level 3)"""
+        variant = random.choice(["trig", "quadratic"])
+
+        if variant == "trig":
+            a_trig = random.choice([1, 2])
+            b_trig = random.choice([1, 2])
+            k_trig = random.choice([-1, 0, 1])
+            use_sin = random.choice([True, False])
+
+            if use_sin:
+                func = _sin_func(a_trig, b_trig, 0, k_trig)
+                expr_str = _expr_sin(a_trig, b_trig, 0, k_trig)
+            else:
+                func = _cos_func(a_trig, b_trig, 0, k_trig)
+                expr_str = _expr_cos(a_trig, b_trig, 0, k_trig)
+
+            x_range = (-7, 7)
+            y_range = (-a_trig - abs(k_trig) - 2, a_trig + abs(k_trig) + 2)
+            a_val = k_trig
+
+            c = random.choice([-6, -5, -4, -3])
+            d = c + random.choice([4, 5, 6, 7])
+            d = min(d, 6)
+
+        else:
+            h = random.choice([-2, -1, 0, 1, 2])
+            k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+            a_coeff = random.choice([-1, 1])
+            func = _quadratic(a_coeff, h, k)
+            expr_str = _expr_quadratic(a_coeff, h, k)
+
+            x_range = (-5, 5)
+            yr = max(abs(k) + 6, 8)
+            y_range = (-yr, yr)
+
+            offset = random.choice([1, 2])
+            a_val = k + a_coeff * offset * offset
+
+            c = random.choice([-4, -3, -2])
+            d = random.choice([2, 3, 4])
+
+        intersections = self._find_intersections_with_value(func, a_val, (c, d), n_samples=2000)
+        n_solutions = len(intersections)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+        graph_svg = self._add_horizontal_line(graph_svg, a_val, x_range, y_range)
+
+        for boundary in [c, d]:
+            bx, by_top = _world_to_svg(boundary, y_range[1], x_range, y_range)
+            _, by_bot = _world_to_svg(boundary, y_range[0], x_range, y_range)
+            vline = (
+                f'<line x1="{bx:.1f}" y1="{by_top:.1f}" '
+                f'x2="{bx:.1f}" y2="{by_bot:.1f}" '
+                f'stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3"/>'
+            )
+            vlabel = (
+                f'<text x="{bx + 2:.1f}" y="{by_top + 12:.1f}" '
+                f'font-size="8" fill="#16a34a">x={_fmt_num(boundary)}</text>'
+            )
+            graph_svg = graph_svg.replace("</svg>", f"{vline}{vlabel}</svg>")
+
+        if n_solutions == 0:
+            correct = "Nessuna soluzione"
+        elif n_solutions == 1:
+            correct = "1 soluzione"
+        else:
+            correct = f"{n_solutions} soluzioni"
+
+        all_count_options = [
+            "Nessuna soluzione", "1 soluzione", "2 soluzioni",
+            "3 soluzioni", "4 soluzioni", "5 soluzioni",
+        ]
+        distractors = [o for o in all_count_options if o != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Nell'intervallo [{_fmt_num(c)}, {_fmt_num(d)}], si traccia la retta "
+            f"y = {_fmt_num(a_val)} e si contano le intersezioni con il grafico "
+            f"di {expr_str} all'interno dell'intervallo indicato. "
+            f"Le soluzioni sono {n_solutions}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Quante soluzioni ha f(x) = {_fmt_num(a_val)} "
+                f"nell'intervallo [{_fmt_num(c)}, {_fmt_num(d)}]?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Contare le soluzioni in un intervallo specifico richiede "
+                "attenzione ai limiti: una soluzione fuori dall'intervallo "
+                "non va contata!"
+            ),
+        }
+
+    # ------------------------------------------------------------------
 
     def generate(self, difficulty: int) -> dict:
         difficulty = max(1, min(3, difficulty))
+
+        # ~20% chance of equation/inequality template at any level
+        eq_templates_l1 = [
+            self._template_equation_simple,
+            self._template_equation_count,
+        ]
+        eq_templates_l2 = [
+            self._template_inequality_interval,
+            self._template_inequality_sign,
+        ]
+        eq_templates_l3 = [
+            self._template_equation_two_functions,
+            self._template_inequality_two_functions,
+            self._template_equation_solutions_range,
+        ]
+
+        if difficulty == 1:
+            eq_pool = eq_templates_l1
+        elif difficulty == 2:
+            eq_pool = eq_templates_l1 + eq_templates_l2
+        else:
+            eq_pool = eq_templates_l1 + eq_templates_l2 + eq_templates_l3
+
+        if random.random() < 0.20:
+            return random.choice(eq_pool)()
+
+        # ~15-20% chance of a parameter-effect template at any level
+        param_templates_l1 = [
+            self._template_param_quadratic_a,
+            self._template_param_vertical_shift,
+        ]
+        param_templates_l2 = [
+            self._template_param_horizontal_shift,
+            self._template_param_vertical_stretch,
+            self._template_param_reflection,
+        ]
+        param_templates_l3 = [
+            self._template_param_combined,
+            self._template_param_family_effect,
+            self._template_param_identify_formula,
+        ]
+
+        if difficulty == 1:
+            param_pool = param_templates_l1
+        elif difficulty == 2:
+            param_pool = param_templates_l1 + param_templates_l2
+        else:
+            param_pool = param_templates_l1 + param_templates_l2 + param_templates_l3
+
+        if random.random() < 0.18:
+            template_fn = random.choice(param_pool)
+            return template_fn()
 
         # At L2/L3, mix in domain/evaluation/sign/injectivity templates
         if difficulty >= 2:

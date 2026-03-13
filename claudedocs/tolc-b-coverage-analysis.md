@@ -7,7 +7,7 @@
 
 ## 1. Panoramica
 
-Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **57 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 6 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v4 (TOLC-38→42): Number Sense (12 template aritmetica pura), Which Satisfies (10 template meta-formato), combinatorica vincolata (4 template), word problems numerici TOLC-style (5 template), ribilanciamento pesi simulazione. **~175 template** distribuiti su **17 moduli**, **1484 test** automatizzati. Assessment v4 (§10): copertura domande reali 40q dal 67.5% al 87.5%.
+Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **57 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 6 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v4 (TOLC-38→42): Number Sense (12 template aritmetica pura), Which Satisfies (10 template meta-formato), combinatorica vincolata (4 template), word problems numerici TOLC-style (5 template), ribilanciamento pesi simulazione. Implementazioni v5 (TOLC-50→52): Function Composition (7 template composizione funzioni), Geometric Transformations (9 template trasformazioni geometriche), Estimation in Exam (stima inclusa in simulazione esame). **~191 template** distribuiti su **18 moduli**, **1804 test** automatizzati. Assessment v4 (§10): copertura domande reali 40q dal 67.5% al 87.5%.
 
 ### Legenda Stati
 
@@ -52,6 +52,9 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Segno di f(x) | Graph Reader (tipo C) | **COPERTO** | Per quali x è f(x) > 0? |
 | Iniettività | Graph Reader (tipo C) | **IMPLEMENTATO** | Test retta orizzontale, intervalli di iniettività, codominio — 2026-03-12 |
 | Invertibilità | Graph Reader (tipo C) | **IMPLEMENTATO** | Condizioni di invertibilità, restrizione dominio — 2026-03-12 |
+| Composizione di funzioni | Function Composition (tipo R) | **IMPLEMENTATO** | 7 template: valutazione f(g(x)), identificazione formula, composizione da tabella, ordine importa, decomposizione, dominio composizione, tripla composizione — 162 test — 2026-03-13 |
+| Equazioni/disequazioni da grafici | Graph Reader (tipo C) | **IMPLEMENTATO** | 7 template: f(x)=a (trova x), conta soluzioni, f(x)>a intervalli, segno f(x)≥0, f(x)=g(x) intersezioni, f(x)>g(x) intervalli, soluzioni in intervallo — SVG con retta tratteggiata y=a — 64 test — 2026-03-13 |
+| Effetto parametri su grafici | Graph Reader (tipo C) | **IMPLEMENTATO** | 8 template: effetto coeff. quadratico, traslazione verticale/orizzontale, dilatazione verticale, riflessione, trasformazione combinata, effetto parametri sin/exp, identificazione formula — SVG multi-curva — 38 test — 2026-03-13 |
 
 ### 2.3 Geometria Euclidea
 
@@ -63,6 +66,9 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Poligoni | Geometry Sherlock (tipo F) | **COPERTO** | |
 | Aree e perimetri | Geometry Sherlock (tipo F) | **COPERTO** | |
 | Geometria solida / Volumi | Geometry Sherlock (tipo F) | **IMPLEMENTATO** | 7 template: cilindro, cono, sfera, prisma, piramide, compositi (cilindro+cono, sfera inscritta) — SVG 3D — 2026-03-12 |
+| Trasformazioni geometriche | Geometry Sherlock (tipo F) | **IMPLEMENTATO** | 9 template: simmetria assiale (x/y), traslazione, simmetria centrale, rotazione 90°/180°, similitudine (lunghezze, area/volume), composizione trasformazioni, trasformazione vertici — SVG piano cartesiano — 45 test — 2026-03-13 |
+| Triangoli simili | Geometry Sherlock (tipo F) | **IMPLEMENTATO** | 4 template: lato incognito via proporzione, fattore di scala, rapporto aree da k², problema ombre reale — SVG — 71 test — 2026-03-13 |
+| Rapporti trigonometrici | Geometry Sherlock (tipo F) | **IMPLEMENTATO** | 4 template: sin/cos/tan dati i lati, lato dato angolo e lato, identificazione angolo da rapporto, altezza edificio con tan — SVG triangolo rettangolo — 2026-03-13 |
 
 ### 2.4 Geometria Analitica
 
@@ -247,6 +253,9 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | 2026-03-13 | TOLC-41 | Aggiunti 4 template combinatorica vincolata in `exercises/probability_game.py`: _comb_digit_constraint (vincolo parità cifre, L2), _comb_seating_adjacent (posti adiacenti, L2), _comb_digits_no_repeat (cifre senza ripetizione, L3), _comb_selection_exclusion (selezione con esclusione, L3). Helper _make_int_distractors. Test: `tests/test_combinatorics_constrained.py` (213 test). | Claude |
 | 2026-03-13 | TOLC-42 | Aggiunti 5 template word problems numerici TOLC-style in `exercises/word_modeler.py`: _numeric_bus_cost (arrotondamento per eccesso, L1), _numeric_fraction_redistribution (redistribuzione frazioni, L1), _numeric_percentage_multistep (percentuali multistep, L2), _numeric_exam_scores (media voti, L2), _numeric_successive_operations (operazioni successive, L3). Aggiunto parametro exam_mode=True per preferire 60% numerici in modalità esame. | Claude |
 | 2026-03-13 | TOLC-43 | Assessment v4 (§10): rivalutazione completa 40 domande reali (SET A + SET B). Copertura dal 67.5% (27/40) al 87.5% (35/40). 1 sola domanda NON COPERTA (parabola). Realismo simulazione da 7.5/10 a 8.5/10. Distribuzione pesi allineata al TOLC reale entro ±5%. 1484 test, ~175 template, 17 moduli. | Claude |
+| 2026-03-13 | TOLC-50 | Creato modulo `exercises/function_composition.py` con classe `FunctionComposition`: 7 template composizione funzioni. L1: evaluate_composition f(g(a)), identify_composition_formula. L2: composition_from_table, order_matters f∘g≠g∘f, decompose_function. L3: domain_of_composition, triple_composition. Registrato in `app.py` come tipo `composition`, aggiunto a `REALISTIC_EXAM_WEIGHTS` (peso 1). Test: `tests/test_function_composition.py` (162 test). | Claude |
+| 2026-03-13 | TOLC-51 | Aggiunti 9 template trasformazioni geometriche in `exercises/geometry_sherlock.py`: L1 — simmetria assiale (asse x/y), traslazione per vettore, simmetria centrale (origine). L2 — rotazione 90°/270°, similitudine lunghezze (rapporto k), rotazione 180° somma coordinate. L3 — similitudine area/volume (k²/k³), composizione traslazione+riflessione, trasformazione vertici triangolo. Helpers SVG: `_svg_coordinate_plane()`, `_svg_point()`, `_svg_dashed_line()`, `_svg_arrow()`. Fix loop infiniti pre-esistenti. Test: `tests/test_geometric_transformations.py` (45 test). | Claude |
+| 2026-03-13 | TOLC-52 | Aggiunto parametro `exam_mode=True` a `EstimationBlitz.generate()`: rimuove `time_limit`, cambia prefisso domanda in "Senza calcolatrice, stimare il valore di:". Aggiunto `estimation` a `REALISTIC_EXAM_WEIGHTS` (peso 1), ribilanciato number_sense da 3→2 e word da 2→1, aggiunto composition peso 1. Totale resta 20. Test: `tests/test_estimation_exam.py` (113 test). | Claude |
 
 ---
 

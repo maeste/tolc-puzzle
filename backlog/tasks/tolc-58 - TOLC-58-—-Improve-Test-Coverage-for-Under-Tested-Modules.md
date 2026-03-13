@@ -1,9 +1,10 @@
 ---
 id: TOLC-58
 title: TOLC-58 — Improve Test Coverage for Under-Tested Modules
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-13 11:28'
+updated_date: '2026-03-13 13:24'
 labels:
   - quality
   - testing

@@ -10,7 +10,7 @@ class EstimationBlitz(Exercise):
     # Default per-question time limit in seconds
     DEFAULT_TIME_LIMIT = 8
 
-    def generate(self, difficulty: int) -> dict:
+    def generate(self, difficulty: int, exam_mode: bool = False) -> dict:
         difficulty = max(1, min(3, difficulty))
 
         if difficulty == 1:
@@ -43,7 +43,17 @@ class EstimationBlitz(Exercise):
 
         template_fn = random.choice(templates)
         result = template_fn()
-        result["time_limit"] = time_limit
+
+        if exam_mode:
+            # In exam mode: no time_limit, exam-appropriate question text
+            question = result["question"]
+            # Replace the speed-oriented prompt with an exam-appropriate one
+            if question.startswith("Stima velocemente il risultato di:\n"):
+                expr = question.replace("Stima velocemente il risultato di:\n", "")
+                result["question"] = f"Senza calcolatrice, stimare il valore di:\n{expr}"
+        else:
+            result["time_limit"] = time_limit
+
         result["difficulty"] = difficulty
         return result
 
