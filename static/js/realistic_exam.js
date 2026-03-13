@@ -196,8 +196,13 @@ document.addEventListener("DOMContentLoaded", () => {
         html += `</span>`;
         html += `</div>`;
 
-        // Question text (no SVG, no graph_data)
+        // Question text
         html += `<div class="question exam-question">${ex.question}</div>`;
+
+        // SVG graph (if present for graph/geometry type questions)
+        if (ex.graph_data) {
+            html += `<div class="sim-graph-container">${ex.graph_data}</div>`;
+        }
 
         // Options with letter labels (A, B, C, D, E) — always 5 options
         if (ex.options) {
@@ -572,6 +577,11 @@ document.addEventListener("DOMContentLoaded", () => {
             html += `</div>`;
 
             html += `<div class="exam-review-question">${ex.question}</div>`;
+
+            // SVG graph in review
+            if (ex.graph_data) {
+                html += `<div class="sim-graph-container">${ex.graph_data}</div>`;
+            }
 
             // Show options with correct/wrong indicators
             if (ex.options) {

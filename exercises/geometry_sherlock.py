@@ -771,6 +771,581 @@ def _t3_inscribed_square_circle():
     return question, side, svg, explanation, tip
 
 
+# ============ SOLID GEOMETRY ============
+
+def _t1_cylinder_volume():
+    """Volume di un cilindro dato raggio di base e altezza."""
+    r = random.randint(2, 10)
+    h = random.randint(3, 15)
+    volume = math.pi * r * r * h
+
+    cx, cy_top = 150, 50
+    svg_rx = r * 8
+    svg_ry = 15
+    svg_h = h * 10
+
+    svg = _svg_start(300, 280)
+    # Top ellipse
+    svg += f'<ellipse cx="{cx}" cy="{cy_top}" rx="{svg_rx}" ry="{svg_ry}" fill="#f0f7ff" stroke="#333" stroke-width="2"/>'
+    # Side lines
+    svg += _svg_line(cx - svg_rx, cy_top, cx - svg_rx, cy_top + svg_h)
+    svg += _svg_line(cx + svg_rx, cy_top, cx + svg_rx, cy_top + svg_h)
+    # Bottom ellipse
+    svg += f'<ellipse cx="{cx}" cy="{cy_top + svg_h}" rx="{svg_rx}" ry="{svg_ry}" fill="none" stroke="#333" stroke-width="2"/>'
+    # Labels
+    svg += _svg_label_known(cx, cy_top - 20, f"r = {r}")
+    svg += _svg_label_known(cx + svg_rx + 20, cy_top + svg_h // 2, f"h = {h}")
+    svg += _svg_label_unknown(cx, cy_top + svg_h + 35, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un cilindro ha raggio di base {r} cm e altezza {h} cm. "
+        f"Qual e' il volume?"
+    )
+    explanation = (
+        f"Volume del cilindro = pi * r^2 * h = pi * {r}^2 * {h} "
+        f"= pi * {r * r} * {h} = {_fmt(volume)} cm^3."
+    )
+    tip = "Volume del cilindro: V = pi * r^2 * h, cioe' area di base per altezza."
+    return question, volume, svg, explanation, tip
+
+
+def _t1_rectangular_prism_volume():
+    """Volume di un parallelepipedo rettangolo."""
+    l = random.randint(3, 12)
+    w = random.randint(2, 10)
+    h = random.randint(2, 10)
+    volume = l * w * h
+
+    ox, oy = 60, 180
+    sl = l * 10
+    sw = w * 6
+    sh = h * 10
+    dx, dy = int(sw * 0.7), int(sw * 0.5)
+
+    svg = _svg_start(300, 280)
+    # Front face
+    svg += _svg_polygon([(ox, oy), (ox + sl, oy), (ox + sl, oy - sh), (ox, oy - sh)], fill="#f0f7ff")
+    # Top face
+    svg += _svg_polygon([(ox, oy - sh), (ox + sl, oy - sh), (ox + sl + dx, oy - sh - dy), (ox + dx, oy - sh - dy)], fill="#dbe9f7")
+    # Right face
+    svg += _svg_polygon([(ox + sl, oy), (ox + sl + dx, oy - dy), (ox + sl + dx, oy - sh - dy), (ox + sl, oy - sh)], fill="#c8ddf0")
+    # Labels
+    svg += _svg_label_known(ox + sl // 2, oy + 18, f"lunghezza {l}")
+    svg += _svg_label_known(ox - 25, oy - sh // 2, f"altezza {h}")
+    svg += _svg_label_known(ox + sl + dx // 2 + 15, oy - dy // 2 + 5, f"larghezza {w}")
+    svg += _svg_label_unknown(ox + sl // 2, oy - sh // 2, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un parallelepipedo rettangolo ha lunghezza {l} cm, "
+        f"larghezza {w} cm e altezza {h} cm. Qual e' il volume?"
+    )
+    explanation = (
+        f"Volume = lunghezza * larghezza * altezza = {l} * {w} * {h} = {volume} cm^3."
+    )
+    tip = "Volume del parallelepipedo: V = l * w * h, prodotto delle tre dimensioni."
+    return question, float(volume), svg, explanation, tip
+
+
+def _t2_cone_volume():
+    """Volume di un cono dato raggio di base e altezza."""
+    r = random.randint(2, 10)
+    h = random.randint(4, 15)
+    volume = math.pi * r * r * h / 3
+
+    cx, cy_apex = 150, 30
+    svg_rx = r * 8
+    svg_ry = 15
+    svg_h = h * 10
+    base_cy = cy_apex + svg_h
+
+    svg = _svg_start(300, 280)
+    # Cone sides
+    svg += _svg_line(cx, cy_apex, cx - svg_rx, base_cy)
+    svg += _svg_line(cx, cy_apex, cx + svg_rx, base_cy)
+    # Base ellipse
+    svg += f'<ellipse cx="{cx}" cy="{base_cy}" rx="{svg_rx}" ry="{svg_ry}" fill="#f0f7ff" stroke="#333" stroke-width="2"/>'
+    # Height dashed line
+    svg += f'<line x1="{cx}" y1="{cy_apex}" x2="{cx}" y2="{base_cy}" stroke="#aaa" stroke-width="1" stroke-dasharray="4,4"/>'
+    # Labels
+    svg += _svg_label_known(cx + svg_rx // 2 + 10, base_cy + 5, f"base {r}")
+    svg += _svg_label_known(cx + 15, cy_apex + svg_h // 2, f"altezza {h}")
+    svg += _svg_label_unknown(cx - svg_rx - 20, base_cy - svg_h // 2, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un cono ha raggio di base {r} cm e altezza {h} cm. "
+        f"Qual e' il volume?"
+    )
+    explanation = (
+        f"Volume del cono = pi * r^2 * h / 3 = pi * {r}^2 * {h} / 3 "
+        f"= pi * {r * r} * {h} / 3 = {_fmt(volume)} cm^3."
+    )
+    tip = "Volume del cono: V = pi * r^2 * h / 3, cioe' un terzo del cilindro con stessa base e altezza."
+    return question, volume, svg, explanation, tip
+
+
+def _t2_sphere_volume():
+    """Volume di una sfera dato il diametro."""
+    d = random.randint(4, 20)
+    r = d / 2
+    volume = 4 * math.pi * r ** 3 / 3
+
+    cx, cy = 150, 130
+    svg_r = int(d * 4)
+
+    svg = _svg_start()
+    svg += _svg_circle(cx, cy, svg_r, fill="#f0f7ff")
+    # Diameter line
+    svg += _svg_line(cx - svg_r, cy, cx + svg_r, cy, color="#2a9d8f", width=2)
+    svg += _svg_label_known(cx, cy + svg_r + 20, f"diametro {d}")
+    svg += _svg_label_unknown(cx, cy - svg_r - 10, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Una sfera ha diametro {d} cm. Qual e' il volume?"
+    )
+    explanation = (
+        f"Raggio = diametro / 2 = {d} / 2 = {_fmt(r)} cm. "
+        f"Volume = 4/3 * pi * r^3 = 4/3 * pi * {_fmt(r)}^3 "
+        f"= 4/3 * pi * {_fmt(r**3)} = {_fmt(volume)} cm^3."
+    )
+    tip = "Volume della sfera: V = 4/3 * pi * r^3. Ricorda di dimezzare il diametro per ottenere il raggio."
+    return question, volume, svg, explanation, tip
+
+
+def _t2_pyramid_volume():
+    """Volume di una piramide a base quadrata."""
+    l = random.randint(3, 12)
+    h = random.randint(4, 15)
+    volume = l * l * h / 3
+
+    cx, cy_apex = 150, 30
+    base_cy = 200
+    half = l * 6
+    dx, dy = int(half * 0.6), int(half * 0.35)
+
+    svg = _svg_start(300, 260)
+    # Base (parallelogram for 3D effect)
+    base_pts = [
+        (cx - half, base_cy),
+        (cx + half, base_cy),
+        (cx + half + dx, base_cy - dy),
+        (cx - half + dx, base_cy - dy),
+    ]
+    svg += _svg_polygon(base_pts, fill="#f0f7ff")
+    # Edges to apex
+    svg += _svg_line(cx - half, base_cy, cx, cy_apex)
+    svg += _svg_line(cx + half, base_cy, cx, cy_apex)
+    svg += _svg_line(cx + half + dx, base_cy - dy, cx, cy_apex)
+    svg += f'<line x1="{cx - half + dx}" y1="{base_cy - dy}" x2="{cx}" y2="{cy_apex}" stroke="#333" stroke-width="1" stroke-dasharray="4,4"/>'
+    # Height dashed line
+    svg += f'<line x1="{cx}" y1="{cy_apex}" x2="{cx}" y2="{base_cy}" stroke="#aaa" stroke-width="1" stroke-dasharray="4,4"/>'
+    # Labels
+    svg += _svg_label_known(cx, base_cy + 18, f"lato di base {l}")
+    svg += _svg_label_known(cx + 15, (cy_apex + base_cy) // 2, f"altezza {h}")
+    svg += _svg_label_unknown(cx - half - 25, (cy_apex + base_cy) // 2, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Una piramide a base quadrata ha lato di base {l} cm e altezza {h} cm. "
+        f"Qual e' il volume?"
+    )
+    explanation = (
+        f"Volume della piramide = l^2 * h / 3 = {l}^2 * {h} / 3 "
+        f"= {l * l} * {h} / 3 = {_fmt(volume)} cm^3."
+    )
+    tip = "Volume della piramide: V = area_base * h / 3. Per base quadrata: V = l^2 * h / 3."
+    return question, volume, svg, explanation, tip
+
+
+def _t3_composite_cylinder_cone():
+    """Volume di una figura composta cilindro + cono con stessa base."""
+    r = random.randint(2, 8)
+    h_cyl = random.randint(4, 12)
+    h_cone = random.randint(3, 10)
+    v_cyl = math.pi * r * r * h_cyl
+    v_cone = math.pi * r * r * h_cone / 3
+    volume = v_cyl + v_cone
+
+    cx = 150
+    svg_rx = r * 8
+    svg_ry = 15
+    cy_top = 30
+    svg_h_cone = h_cone * 8
+    svg_h_cyl = h_cyl * 8
+    cy_cone_base = cy_top + svg_h_cone
+    cy_cyl_bottom = cy_cone_base + svg_h_cyl
+
+    svg = _svg_start(300, 300)
+    # Cone apex
+    svg += _svg_line(cx, cy_top, cx - svg_rx, cy_cone_base)
+    svg += _svg_line(cx, cy_top, cx + svg_rx, cy_cone_base)
+    # Junction ellipse (cone base / cylinder top)
+    svg += f'<ellipse cx="{cx}" cy="{cy_cone_base}" rx="{svg_rx}" ry="{svg_ry}" fill="none" stroke="#333" stroke-width="2"/>'
+    # Cylinder sides
+    svg += _svg_line(cx - svg_rx, cy_cone_base, cx - svg_rx, cy_cyl_bottom)
+    svg += _svg_line(cx + svg_rx, cy_cone_base, cx + svg_rx, cy_cyl_bottom)
+    # Bottom ellipse
+    svg += f'<ellipse cx="{cx}" cy="{cy_cyl_bottom}" rx="{svg_rx}" ry="{svg_ry}" fill="#f0f7ff" stroke="#333" stroke-width="2"/>'
+    # Height lines
+    svg += f'<line x1="{cx}" y1="{cy_top}" x2="{cx}" y2="{cy_cone_base}" stroke="#aaa" stroke-width="1" stroke-dasharray="4,4"/>'
+    # Labels
+    svg += _svg_label_known(cx + svg_rx + 15, cy_cone_base - svg_h_cone // 2, f"altezza {h_cone}")
+    svg += _svg_label_known(cx + svg_rx + 15, cy_cone_base + svg_h_cyl // 2, f"altezza {h_cyl}")
+    svg += _svg_label_known(cx, cy_cyl_bottom + 25, f"(raggio {r} cm)")
+    svg += _svg_label_unknown(cx - svg_rx - 25, cy_cone_base, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Una figura e' composta da un cilindro (raggio {r} cm, "
+        f"altezza {h_cyl} cm) sormontato da un cono con la stessa base e "
+        f"altezza {h_cone} cm. Qual e' il volume totale?"
+    )
+    explanation = (
+        f"V_cilindro = pi * {r}^2 * {h_cyl} = {_fmt(v_cyl)} cm^3. "
+        f"V_cono = pi * {r}^2 * {h_cone} / 3 = {_fmt(v_cone)} cm^3. "
+        f"V_totale = {_fmt(v_cyl)} + {_fmt(v_cone)} = {_fmt(volume)} cm^3."
+    )
+    tip = "Per figure composte, calcola il volume di ogni solido separatamente e poi somma."
+    return question, volume, svg, explanation, tip
+
+
+def _t3_sphere_inscribed_in_cylinder():
+    """Volume residuo: cilindro meno sfera inscritta."""
+    r = random.randint(2, 10)
+    h = 2 * r
+    v_cyl = math.pi * r * r * h
+    v_sphere = 4 * math.pi * r ** 3 / 3
+    volume = v_cyl - v_sphere
+
+    cx, cy_top = 150, 40
+    svg_r = r * 8
+    svg_ry = 15
+    svg_h = h * 8
+
+    svg = _svg_start(300, 280)
+    # Cylinder top ellipse
+    svg += f'<ellipse cx="{cx}" cy="{cy_top}" rx="{svg_r}" ry="{svg_ry}" fill="#f0f7ff" stroke="#333" stroke-width="2"/>'
+    # Cylinder sides
+    svg += _svg_line(cx - svg_r, cy_top, cx - svg_r, cy_top + svg_h)
+    svg += _svg_line(cx + svg_r, cy_top, cx + svg_r, cy_top + svg_h)
+    # Cylinder bottom ellipse
+    svg += f'<ellipse cx="{cx}" cy="{cy_top + svg_h}" rx="{svg_r}" ry="{svg_ry}" fill="none" stroke="#333" stroke-width="2"/>'
+    # Inscribed sphere (circle)
+    svg += _svg_circle(cx, cy_top + svg_h // 2, svg_r, fill="none", stroke="#e63946", width=2)
+    # Labels
+    svg += _svg_label_known(cx, cy_top - 20, f"raggio {r} cm")
+    svg += _svg_label_unknown(cx + svg_r + 25, cy_top + svg_h // 2, "V = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Una sfera di raggio {r} cm e' inscritta in un cilindro avente lo stesso raggio "
+        f"e altezza uguale al diametro della sfera. "
+        f"Qual e' il volume dello spazio tra il cilindro e la sfera?"
+    )
+    explanation = (
+        f"Il cilindro ha r = {r} e h = 2r = {h}. "
+        f"V_cilindro = pi * {r}^2 * {h} = {_fmt(v_cyl)} cm^3. "
+        f"V_sfera = 4/3 * pi * {r}^3 = {_fmt(v_sphere)} cm^3. "
+        f"V_residuo = {_fmt(v_cyl)} - {_fmt(v_sphere)} = {_fmt(volume)} cm^3."
+    )
+    tip = "La sfera inscritta nel cilindro ha h = 2r. Il volume residuo e' V_cilindro - V_sfera."
+    return question, volume, svg, explanation, tip
+
+
+# ============ CIRCLE ADVANCED ============
+
+def _t2_inscribed_angle():
+    """Angolo inscritto: dato l'angolo al centro, trovare l'angolo inscritto (o viceversa)."""
+    r = 80  # SVG radius
+    cx, cy = 150, 130  # center in SVG coords
+    central_angle = random.choice(range(40, 161, 10))  # degrees
+    inscribed_angle = central_angle / 2
+
+    # Decide direction: given central, ask inscribed (or vice versa)
+    ask_inscribed = random.choice([True, False])
+
+    # Place points A, B, C on the circle
+    # A and B define the arc subtending the central angle
+    start_deg = random.randint(0, 360)
+    a_deg = start_deg
+    b_deg = start_deg + central_angle
+
+    # C is on the major arc (opposite side from center angle)
+    c_deg = start_deg + 180 + central_angle / 2  # on the far arc
+
+    def point_on_circle(angle_deg):
+        rad = math.radians(angle_deg)
+        return cx + r * math.cos(rad), cy - r * math.sin(rad)
+
+    ax, ay = point_on_circle(a_deg)
+    bx, by = point_on_circle(b_deg)
+    cxx, cyy = point_on_circle(c_deg)
+
+    svg = _svg_start()
+    svg += _svg_circle(cx, cy, r, fill="#f0f7ff")
+    # Center
+    svg += f'<circle cx="{cx}" cy="{cy}" r="3" fill="#333"/>'
+    svg += _svg_text(cx + 8, cy - 8, "O", color="#333", bold=True, size=12)
+    # Points on circle
+    svg += f'<circle cx="{ax:.1f}" cy="{ay:.1f}" r="3" fill="#2a9d8f"/>'
+    svg += _svg_text(ax + 10, ay - 8, "A", color="#2a9d8f", bold=True, size=12)
+    svg += f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="3" fill="#2a9d8f"/>'
+    svg += _svg_text(bx + 10, by - 8, "B", color="#2a9d8f", bold=True, size=12)
+    svg += f'<circle cx="{cxx:.1f}" cy="{cyy:.1f}" r="3" fill="#e63946"/>'
+    svg += _svg_text(cxx + 10, cyy - 8, "C", color="#e63946", bold=True, size=12)
+    # Lines: OA, OB (central angle)
+    svg += _svg_line(cx, cy, ax, ay, color="#2a9d8f", width=1)
+    svg += _svg_line(cx, cy, bx, by, color="#2a9d8f", width=1)
+    # Lines: CA, CB (inscribed angle)
+    svg += _svg_line(cxx, cyy, ax, ay, color="#e63946", width=1)
+    svg += _svg_line(cxx, cyy, bx, by, color="#e63946", width=1)
+
+    if ask_inscribed:
+        # Given central angle, ask for inscribed
+        svg += _svg_arc_angle(cx, cy, a_deg, b_deg, radius=22, label=f"{central_angle}\u00b0")
+        svg += _svg_label_unknown(cxx - 15, cyy + 20, "? \u00b0")
+        question = (
+            f"In un cerchio con centro O, l'angolo al centro AOB misura {central_angle}\u00b0. "
+            f"Quanto misura l'angolo inscritto ACB che sottende lo stesso arco?"
+        )
+        correct_value = inscribed_angle
+    else:
+        # Given inscribed angle, ask for central
+        svg += _svg_label_known(cxx - 15, cyy + 20, f"{_fmt(inscribed_angle)}\u00b0")
+        svg += _svg_label_unknown(cx - 15, cy + 25, "? \u00b0")
+        question = (
+            f"In un cerchio con centro O, l'angolo inscritto ACB misura {_fmt(inscribed_angle)}\u00b0. "
+            f"Quanto misura l'angolo al centro AOB che sottende lo stesso arco?"
+        )
+        correct_value = float(central_angle)
+
+    svg += _svg_end()
+
+    explanation = (
+        f"Per il teorema dell'angolo inscritto, l'angolo inscritto e' la meta' dell'angolo al centro "
+        f"che sottende lo stesso arco. Angolo al centro = {central_angle}\u00b0, "
+        f"angolo inscritto = {central_angle}\u00b0 / 2 = {_fmt(inscribed_angle)}\u00b0."
+    )
+    tip = "Teorema dell'angolo inscritto: l'angolo inscritto e' sempre la meta' dell'angolo al centro che sottende lo stesso arco."
+    return question, correct_value, svg, explanation, tip
+
+
+def _t2_chord_distance():
+    """Distanza della corda dal centro del cerchio."""
+    # Use Pythagorean triples for clean results
+    triples = [
+        (5, 6, 4),    # r=5, l=6 (half=3), d=4
+        (5, 8, 3),    # r=5, l=8 (half=4), d=3
+        (10, 12, 8),  # r=10, l=12 (half=6), d=8
+        (10, 16, 6),  # r=10, l=16 (half=8), d=6
+        (13, 10, 12), # r=13, l=10 (half=5), d=12
+        (13, 24, 5),  # r=13, l=24 (half=12), d=5
+        (15, 18, 12), # r=15, l=18 (half=9), d=12
+        (17, 16, 15), # r=17, l=16 (half=8), d=15
+        (25, 14, 24), # r=25, l=14 (half=7), d=24
+        (20, 24, 16), # r=20, l=24 (half=12), d=16
+    ]
+    r_val, l_val, d_val = random.choice(triples)
+
+    cx, cy = 150, 130
+    svg_r = 80  # SVG circle radius
+
+    # Chord drawn horizontally centered
+    half_l_svg = svg_r * (l_val / 2) / r_val
+    d_svg = svg_r * d_val / r_val
+
+    chord_y = cy + d_svg  # chord below center
+    chord_x1 = cx - half_l_svg
+    chord_x2 = cx + half_l_svg
+
+    svg = _svg_start()
+    svg += _svg_circle(cx, cy, svg_r, fill="#f0f7ff")
+    # Center
+    svg += f'<circle cx="{cx}" cy="{cy}" r="3" fill="#333"/>'
+    svg += _svg_text(cx + 10, cy - 5, "O", color="#333", bold=True, size=12)
+    # Chord
+    svg += _svg_line(chord_x1, chord_y, chord_x2, chord_y, color="#2a9d8f", width=2)
+    svg += _svg_label_known(cx, chord_y + 18, f"l = {l_val}")
+    # Perpendicular from center to chord
+    svg += f'<line x1="{cx}" y1="{cy}" x2="{cx}" y2="{chord_y}" stroke="#e63946" stroke-width="1.5" stroke-dasharray="4,4"/>'
+    # Right angle marker at foot of perpendicular
+    svg += _svg_right_angle(cx, chord_y, 0, 90)
+    # Radius to one end of chord
+    svg += _svg_line(cx, cy, chord_x2, chord_y, color="#aaa", width=1)
+    svg += _svg_label_known(cx + 35, cy - 15, f"r = {r_val}")
+    # Unknown distance
+    svg += _svg_label_unknown(cx + 12, (cy + chord_y) / 2, "d = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un cerchio ha raggio {r_val} cm. Una corda misura {l_val} cm. "
+        f"Qual e' la distanza della corda dal centro del cerchio?"
+    )
+    explanation = (
+        f"La perpendicolare dal centro alla corda la divide a meta'. "
+        f"Si forma un triangolo rettangolo con ipotenusa r = {r_val} e un cateto = l/2 = {l_val}/2 = {l_val // 2}. "
+        f"La distanza del centro dalla corda si calcola col teorema di Pitagora: "
+        f"d = sqrt(r^2 - (l/2)^2) = sqrt({r_val}^2 - {l_val // 2}^2) "
+        f"= sqrt({r_val**2} - {(l_val // 2)**2}) = sqrt({r_val**2 - (l_val // 2)**2}) = {d_val} cm."
+    )
+    tip = "Teorema corda-distanza: la perpendicolare dal centro alla corda la divide a meta', formando un triangolo rettangolo."
+    return question, float(d_val), svg, explanation, tip
+
+
+def _t3_arc_length():
+    """Lunghezza dell'arco di cerchio dato raggio e angolo al centro."""
+    # Use values giving clean multiples of pi
+    configs = [
+        (6, 60, 2),      # L = 2pi*6*60/360 = 2pi
+        (6, 120, 4),     # L = 2pi*6*120/360 = 4pi
+        (9, 40, 2),      # L = 2pi*9*40/360 = 2pi
+        (9, 120, 6),     # L = 2pi*9*120/360 = 6pi
+        (3, 60, 1),      # L = 2pi*3*60/360 = pi
+        (3, 120, 2),     # L = 2pi*3*120/360 = 2pi
+        (12, 90, 6),     # L = 2pi*12*90/360 = 6pi
+        (12, 60, 4),     # L = 2pi*12*60/360 = 4pi
+        (18, 60, 6),     # L = 2pi*18*60/360 = 6pi
+        (15, 72, 6),     # L = 2pi*15*72/360 = 6pi
+    ]
+    r_val, alpha_deg, pi_mult = random.choice(configs)
+    arc_length = 2 * math.pi * r_val * alpha_deg / 360  # = pi_mult * pi
+
+    cx, cy = 150, 130
+    svg_r = 80
+
+    # Draw the arc
+    a1_rad = math.radians(0)
+    a2_rad = math.radians(alpha_deg)
+    x1 = cx + svg_r * math.cos(a1_rad)
+    y1 = cy - svg_r * math.sin(a1_rad)
+    x2 = cx + svg_r * math.cos(a2_rad)
+    y2 = cy - svg_r * math.sin(a2_rad)
+    large_flag = 1 if alpha_deg > 180 else 0
+
+    svg = _svg_start()
+    svg += _svg_circle(cx, cy, svg_r, fill="#f0f7ff")
+    # Highlight the arc
+    svg += (
+        f'<path d="M {x1:.1f} {y1:.1f} A {svg_r} {svg_r} 0 {large_flag} 0 {x2:.1f} {y2:.1f}" '
+        f'fill="none" stroke="#e63946" stroke-width="4"/>'
+    )
+    # Center
+    svg += f'<circle cx="{cx}" cy="{cy}" r="3" fill="#333"/>'
+    svg += _svg_text(cx + 10, cy + 15, "O", color="#333", bold=True, size=12)
+    # Radii
+    svg += _svg_line(cx, cy, x1, y1, color="#2a9d8f", width=1)
+    svg += _svg_line(cx, cy, x2, y2, color="#2a9d8f", width=1)
+    # Angle arc
+    svg += _svg_arc_angle(cx, cy, 0, alpha_deg, radius=25, label=f"{alpha_deg}\u00b0")
+    # Labels
+    svg += _svg_label_known(cx + svg_r / 2 + 5, cy + 15, f"r = {r_val}")
+    # Arc length label at midpoint of arc
+    mid_angle = math.radians(alpha_deg / 2)
+    lx = cx + (svg_r + 18) * math.cos(mid_angle)
+    ly = cy - (svg_r + 18) * math.sin(mid_angle)
+    svg += _svg_label_unknown(lx, ly, "L = ?")
+    svg += _svg_end()
+
+    question = (
+        f"Un cerchio ha raggio {r_val} cm. Calcola la lunghezza dell'arco "
+        f"sotteso da un angolo al centro di {alpha_deg}\u00b0."
+    )
+    explanation = (
+        f"La lunghezza dell'arco e' la frazione dell'angolo sulla circonferenza totale: "
+        f"L = 2*pi*r * alpha/360 = 2*pi*{r_val} * {alpha_deg}/360 "
+        f"= {_fmt(2 * r_val)}*pi * {alpha_deg}/360 = {pi_mult}*pi = {_fmt(arc_length)} cm."
+    )
+    tip = "Lunghezza arco: L = 2*pi*r * angolo/360. E' la proporzione tra angolo e giro completo applicata alla circonferenza."
+    return question, arc_length, svg, explanation, tip
+
+
+def _t3_power_of_point():
+    """Potenza di un punto: due secanti da un punto esterno."""
+    # PA * PB = PC * PD, all integers
+    configs = [
+        (3, 8, 4, 6),    # 3*8=24, 4*6=24
+        (2, 12, 3, 8),   # 2*12=24, 3*8=24
+        (4, 9, 6, 6),    # 4*9=36, 6*6=36
+        (2, 18, 4, 9),   # 2*18=36, 4*9=36
+        (3, 12, 4, 9),   # 3*12=36, 4*9=36
+        (5, 8, 4, 10),   # 5*8=40, 4*10=40
+        (2, 15, 5, 6),   # 2*15=30, 5*6=30
+        (3, 10, 5, 6),   # 3*10=30, 5*6=30
+        (4, 12, 6, 8),   # 4*12=48, 6*8=48
+        (6, 8, 4, 12),   # 6*8=48, 4*12=48
+    ]
+    pa, pb, pc, pd = random.choice(configs)
+
+    # SVG layout: circle in center, point P to the left
+    cx, cy = 180, 130
+    svg_r = 55
+
+    # P is external, to the left
+    px, py = 40, 130
+
+    # First secant goes through circle: segments PA and PB from P
+    # Second secant: segments PC and PD from P
+    # Position lines at slight angles
+
+    svg = _svg_start()
+    svg += _svg_circle(cx, cy, svg_r, fill="#f0f7ff")
+    # Point P
+    svg += f'<circle cx="{px}" cy="{py}" r="4" fill="#e63946"/>'
+    svg += _svg_text(px - 12, py + 4, "P", color="#e63946", bold=True, size=13)
+
+    # First secant (roughly horizontal)
+    # A is closer to P, B is farther
+    scale1 = (cx + svg_r - px) / pb  # B near far edge of circle
+    ax_svg = px + pa * scale1
+    ay_svg = py - pa * scale1 * math.sin(0.15)
+    bx_svg = px + pb * scale1
+    by_svg = py - pb * scale1 * math.sin(0.15)
+
+    svg += _svg_line(px, py, bx_svg, by_svg, color="#2a9d8f", width=1.5)
+    svg += f'<circle cx="{ax_svg:.1f}" cy="{ay_svg:.1f}" r="3" fill="#2a9d8f"/>'
+    svg += _svg_text(ax_svg, ay_svg - 12, "A", color="#2a9d8f", bold=True, size=12)
+    svg += f'<circle cx="{bx_svg:.1f}" cy="{by_svg:.1f}" r="3" fill="#2a9d8f"/>'
+    svg += _svg_text(bx_svg + 8, by_svg - 8, "B", color="#2a9d8f", bold=True, size=12)
+
+    # Second secant (angled downward)
+    scale2 = (cx + svg_r - px) / pd
+    angle2 = -0.25
+    cx_svg = px + pc * scale2 * math.cos(angle2)
+    cy_svg = py - pc * scale2 * math.sin(angle2)
+    dx_svg = px + pd * scale2 * math.cos(angle2)
+    dy_svg = py - pd * scale2 * math.sin(angle2)
+
+    svg += _svg_line(px, py, dx_svg, dy_svg, color="#e76f51", width=1.5)
+    svg += f'<circle cx="{cx_svg:.1f}" cy="{cy_svg:.1f}" r="3" fill="#e76f51"/>'
+    svg += _svg_text(cx_svg, cy_svg + 18, "C", color="#e76f51", bold=True, size=12)
+    svg += f'<circle cx="{dx_svg:.1f}" cy="{dy_svg:.1f}" r="3" fill="#e76f51"/>'
+    svg += _svg_text(dx_svg + 8, dy_svg + 15, "D", color="#e76f51", bold=True, size=12)
+
+    # Labels for known segments
+    svg += _svg_label_known((px + ax_svg) / 2, ay_svg - 18, f"PA={pa}")
+    svg += _svg_label_known((ax_svg + bx_svg) / 2, by_svg - 18, f"PB={pb}")
+    svg += _svg_label_known((px + cx_svg) / 2, cy_svg + 22, f"PC={pc}")
+    svg += _svg_label_unknown((cx_svg + dx_svg) / 2, dy_svg + 22, f"PD=?")
+    svg += _svg_end()
+
+    question = (
+        f"Da un punto P esterno a un cerchio si tracciano due secanti. "
+        f"La prima secante interseca il cerchio nei punti A e B con PA = {pa} e PB = {pb}. "
+        f"La seconda secante interseca il cerchio nei punti C e D con PC = {pc}. "
+        f"Quanto vale PD?"
+    )
+    explanation = (
+        f"Per il teorema della potenza di un punto: PA * PB = PC * PD. "
+        f"Quindi {pa} * {pb} = {pc} * PD, cioe' {pa * pb} = {pc} * PD. "
+        f"PD = {pa * pb} / {pc} = {pd}."
+    )
+    tip = "Teorema della potenza di un punto: per due secanti dallo stesso punto esterno, PA * PB = PC * PD."
+    return question, float(pd), svg, explanation, tip
+
+
 class GeometrySherlock(Exercise):
     """Sherlock Geometrico -- geometric figures with partial data and progressive clues."""
 
@@ -780,6 +1355,8 @@ class GeometrySherlock(Exercise):
         _t1_rectangle_area,
         _t1_circle_area,
         _t1_triangle_area,
+        _t1_cylinder_volume,
+        _t1_rectangular_prism_volume,
     ]
 
     TEMPLATES_L2 = [
@@ -789,6 +1366,11 @@ class GeometrySherlock(Exercise):
         _t2_circle_sector_area,
         _t2_trig_right_triangle,
         _t2_perimeter_composite,
+        _t2_inscribed_angle,
+        _t2_chord_distance,
+        _t2_cone_volume,
+        _t2_sphere_volume,
+        _t2_pyramid_volume,
     ]
 
     TEMPLATES_L3 = [
@@ -798,6 +1380,10 @@ class GeometrySherlock(Exercise):
         _t3_circle_tangent_length,
         _t3_line_intersection_area,
         _t3_inscribed_square_circle,
+        _t3_arc_length,
+        _t3_power_of_point,
+        _t3_composite_cylinder_cone,
+        _t3_sphere_inscribed_in_cylinder,
     ]
 
     def generate(self, difficulty: int) -> dict:

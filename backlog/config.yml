@@ -2,6 +2,7 @@ project_name: "tolc-puzzle"
 default_status: "To Do"
 statuses: ["To Do", "In Progress", "Done"]
 labels: []
+definition_of_done: ["Test automatizzati passano (pytest)", "Coverage doc aggiornato (claudedocs/tolc-b-coverage-analysis.md)", "Esercizi generati correttamente con distrattori sensati", "Integrato nella simulazione esame se applicabile"]
 date_format: yyyy-mm-dd
 max_column_width: 20
 auto_open_browser: true

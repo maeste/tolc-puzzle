@@ -968,6 +968,23 @@ footer {
 .exam-option-text { flex: 1; }
 .exam-question { font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.7; }
 
+/* SVG graph container for graph/geometry questions */
+.sim-graph-container {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    max-width: 500px;
+}
+.sim-graph-container svg {
+    max-width: 100%;
+    height: auto;
+}
+@media (max-width: 600px) {
+    .sim-graph-container {
+        max-width: 100%;
+    }
+}
+
 /* Exam review section */
 .sim-review {
     background: var(--bg-card);

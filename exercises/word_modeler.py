@@ -675,10 +675,274 @@ class WordModeler(Exercise):
         return question, correct, [d1, d2, d3, d4], explanation, tip
 
     # ================================================================
+    #  NUMERIC-ANSWER TEMPLATES
+    #  Each returns (question, correct_answer_str, distractors, explanation, tip)
+    #  where correct_answer_str and distractors are numeric strings.
+    # ================================================================
+
+    # --- helpers for numeric distractors ---
+    @staticmethod
+    def _numeric_distractors(correct, offsets=None):
+        """Generate 4 distinct numeric distractors around *correct* (int).
+
+        *offsets*, if given, must be a list of 4 non-zero integers.
+        Otherwise reasonable defaults are computed.
+        All returned values are stringified integers, guaranteed distinct
+        from *correct* and from each other.
+        """
+        if offsets is None:
+            offsets = [-2, -1, 1, 2]
+        candidates = []
+        for o in offsets:
+            v = correct + o
+            if v != correct and v not in candidates:
+                candidates.append(v)
+        # fill up to 4 if collisions removed some
+        extra = 3
+        while len(candidates) < 4:
+            extra += 1
+            v = correct + extra
+            if v != correct and v not in candidates:
+                candidates.append(v)
+        return [str(c) for c in candidates[:4]]
+
+    # ---- Level 1 numeric templates ----
+
+    @staticmethod
+    def _numeric_age_sum():
+        """Age problem: A is N years older than B, sum of ages is S. How old is A?"""
+        name_a, name_b = _pick_two_names()
+        diff = random.randint(3, 15)
+        # ensure sum is even-friendly: b = (total - diff) / 2 must be positive integer
+        b_age = random.randint(8, 35)
+        a_age = b_age + diff
+        total = a_age + b_age
+        question = (
+            f"{name_a} ha {diff} anni piu di {name_b}. "
+            f"La somma delle loro eta e {total}. "
+            f"Quanti anni ha {name_a}?"
+        )
+        correct = a_age
+        distractors = WordModeler._numeric_distractors(
+            correct, [-(diff), -1, diff, b_age - a_age if b_age != a_age else 3]
+        )
+        explanation = (
+            f"Se {name_b} ha x anni, allora {name_a} ha x + {diff}. "
+            f"Dalla somma: x + (x + {diff}) = {total}, quindi 2x = {total - diff}, "
+            f"x = {b_age}, e {name_a} ha {b_age} + {diff} = {a_age} anni."
+        )
+        tip = "Nei problemi di eta con somma e differenza: il maggiore = (somma + differenza) / 2."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_discount():
+        """Price with percentage discount: what is the discounted price?"""
+        name = _pick_name()
+        original = random.choice([40, 50, 60, 80, 100, 120, 150, 200])
+        perc = random.choice([10, 15, 20, 25, 30, 40, 50])
+        discounted = int(original * (100 - perc) / 100)
+        # ensure clean integer result
+        while discounted != original * (100 - perc) / 100:
+            original = random.choice([40, 50, 60, 80, 100, 120, 150, 200])
+            perc = random.choice([10, 20, 25, 30, 40, 50])
+            discounted = int(original * (100 - perc) / 100)
+        question = (
+            f"{name} vuole comprare un articolo che costa {original} euro. "
+            f"Il negozio applica uno sconto del {perc}%. "
+            f"Qual e il prezzo scontato?"
+        )
+        correct = discounted
+        wrong_add = original + int(original * perc / 100)
+        wrong_sub_flat = original - perc
+        wrong_half = original // 2
+        distractors = WordModeler._numeric_distractors(
+            correct, [wrong_add - correct, wrong_sub_flat - correct, wrong_half - correct, 5]
+        )
+        explanation = (
+            f"Il prezzo scontato = {original} - {original} * {perc}/100 = "
+            f"{original} - {int(original * perc / 100)} = {discounted} euro."
+        )
+        tip = "Sconto del p%: prezzo_finale = prezzo * (1 - p/100). Non sottrarre la percentuale direttamente!"
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_percentage_of():
+        """Percentage of a group: how many satisfy a condition?"""
+        name = _pick_name()
+        total_students = random.choice([20, 25, 30, 40, 50, 60])
+        perc = random.choice([10, 20, 25, 30, 40, 50, 60, 75, 80])
+        count = int(total_students * perc / 100)
+        while count != total_students * perc / 100:
+            total_students = random.choice([20, 25, 30, 40, 50, 60])
+            perc = random.choice([10, 20, 25, 30, 40, 50, 60, 75, 80])
+            count = int(total_students * perc / 100)
+        activity = random.choice(["pratica sport", "studia musica", "parla inglese", "usa i mezzi pubblici"])
+        question = (
+            f"In una classe di {total_students} studenti, il {perc}% {activity}. "
+            f"Quanti studenti {activity}?"
+        )
+        correct = count
+        distractors = WordModeler._numeric_distractors(
+            correct, [-count if count > 2 else -2, perc - count, total_students - count, 3]
+        )
+        explanation = (
+            f"Il {perc}% di {total_students} = {total_students} * {perc}/100 = {count} studenti."
+        )
+        tip = "Per calcolare il p% di N: moltiplica N * p / 100."
+        return question, str(correct), distractors, explanation, tip
+
+    # ---- Level 2 numeric templates ----
+
+    @staticmethod
+    def _numeric_average_add():
+        """Average changes when a new number is added."""
+        n = random.randint(4, 8)
+        mean_old = random.randint(8, 20)
+        total_old = n * mean_old
+        new_value = random.randint(mean_old + 2, mean_old + 20)
+        total_new = total_old + new_value
+        new_mean = total_new // (n + 1)
+        # ensure integer mean
+        while total_new % (n + 1) != 0:
+            new_value += 1
+            total_new = total_old + new_value
+        new_mean = total_new // (n + 1)
+        question = (
+            f"La media di {n} numeri e {mean_old}. "
+            f"Se aggiungiamo il numero {new_value}, qual e la nuova media?"
+        )
+        correct = new_mean
+        distractors = WordModeler._numeric_distractors(
+            correct, [mean_old - correct, -1, 1, new_value - correct]
+        )
+        explanation = (
+            f"La somma dei {n} numeri e {n} * {mean_old} = {total_old}. "
+            f"Aggiungendo {new_value}, la nuova somma e {total_new}. "
+            f"La nuova media e {total_new} / {n + 1} = {new_mean}."
+        )
+        tip = "Media = somma / conteggio. Quando aggiungi un valore, aggiorna sia la somma che il conteggio."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_work_rate():
+        """Two pipes/workers together: how long to complete?"""
+        name_a, name_b = _pick_two_names()
+        # pick hours so that combined time is integer
+        # 1/a + 1/b = 1/t  =>  t = ab/(a+b)
+        a = random.randint(2, 10)
+        b = random.randint(2, 10)
+        while (a * b) % (a + b) != 0 or a == b:
+            a = random.randint(2, 10)
+            b = random.randint(2, 10)
+        t = (a * b) // (a + b)
+        question = (
+            f"Un rubinetto riempie una vasca in {a} ore, un altro in {b} ore. "
+            f"Se entrambi sono aperti, in quante ore riempiono la vasca insieme?"
+        )
+        correct = t
+        distractors = WordModeler._numeric_distractors(
+            correct, [a - correct, b - correct, (a + b) - correct, -1 if correct > 1 else 1]
+        )
+        explanation = (
+            f"Il primo rubinetto fa 1/{a} della vasca all'ora, il secondo 1/{b}. "
+            f"Insieme: 1/{a} + 1/{b} = ({a} + {b})/({a} * {b}) = {a + b}/{a * b}. "
+            f"Tempo = {a * b}/{a + b} = {t} ore."
+        )
+        tip = "Lavoro congiunto: 1/t = 1/a + 1/b, quindi t = (a*b)/(a+b)."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_profit():
+        """Buy at cost, sell at markup: what is the profit?"""
+        name = _pick_name()
+        cost = random.choice([50, 80, 100, 120, 150, 200])
+        markup_perc = random.choice([10, 20, 25, 30, 40, 50])
+        markup = int(cost * markup_perc / 100)
+        while markup != cost * markup_perc / 100:
+            cost = random.choice([50, 80, 100, 120, 150, 200])
+            markup_perc = random.choice([10, 20, 25, 30, 40, 50])
+            markup = int(cost * markup_perc / 100)
+        sell = cost + markup
+        question = (
+            f"{name} compra un prodotto a {cost} euro e lo rivende "
+            f"con un ricarico del {markup_perc}%. "
+            f"Qual e il guadagno in euro?"
+        )
+        correct = markup
+        distractors = WordModeler._numeric_distractors(
+            correct, [sell - correct, cost - correct, markup_perc - correct, -5]
+        )
+        explanation = (
+            f"Il ricarico e {cost} * {markup_perc}/100 = {markup} euro. "
+            f"Il prezzo di vendita e {cost} + {markup} = {sell} euro, "
+            f"ma il guadagno e solo {markup} euro."
+        )
+        tip = "Guadagno = prezzo_vendita - costo_acquisto = costo * ricarico/100."
+        return question, str(correct), distractors, explanation, tip
+
+    # ---- Level 3 numeric templates ----
+
+    @staticmethod
+    def _numeric_system_ages():
+        """System of ages: A + B = total, A is N more than twice B. Find A."""
+        name_a, name_b = _pick_two_names()
+        # a = 2*b + diff, a + b = total  =>  3*b + diff = total  =>  b = (total - diff)/3
+        diff = random.choice([1, 2, 3, 4, 5])
+        b_age = random.randint(5, 20)
+        a_age = 2 * b_age + diff
+        total = a_age + b_age
+        question = (
+            f"La somma delle eta di {name_a} e {name_b} e {total} anni. "
+            f"{name_a} ha {diff} anni piu del doppio dell'eta di {name_b}. "
+            f"Quanti anni ha {name_a}?"
+        )
+        correct = a_age
+        distractors = WordModeler._numeric_distractors(
+            correct, [b_age - correct, -diff, diff, total - correct]
+        )
+        explanation = (
+            f"Sia x l'eta di {name_b}. Allora {name_a} ha 2x + {diff} anni. "
+            f"Dalla somma: x + 2x + {diff} = {total}, 3x = {total - diff}, x = {b_age}. "
+            f"Quindi {name_a} ha 2 * {b_age} + {diff} = {a_age} anni."
+        )
+        tip = "Con 'il doppio piu N': A = 2B + N. Sostituisci nel vincolo della somma per trovare B."
+        return question, str(correct), distractors, explanation, tip
+
+    @staticmethod
+    def _numeric_combined_distance():
+        """Two travelers meet: how many km did each travel?"""
+        name_a, name_b = _pick_two_names()
+        v_a = random.choice([40, 50, 60, 80])
+        v_b = random.choice([50, 60, 70, 90, 100])
+        while v_b == v_a:
+            v_b = random.choice([50, 60, 70, 90, 100])
+        # t must be integer: dist = (v_a + v_b) * t
+        t = random.randint(1, 5)
+        dist = (v_a + v_b) * t
+        d_a = v_a * t
+        question = (
+            f"{name_a} parte dalla citta A a {v_a} km/h e {name_b} parte dalla citta B a {v_b} km/h. "
+            f"Le due citta distano {dist} km e si muovono uno verso l'altro. "
+            f"Quanti chilometri percorre {name_a} prima di incontrarsi?"
+        )
+        correct = d_a
+        d_b = v_b * t
+        distractors = WordModeler._numeric_distractors(
+            correct, [d_b - correct, dist - correct, t - correct, -v_a if v_a != correct else 10]
+        )
+        explanation = (
+            f"Si incontrano dopo t ore: ({v_a} + {v_b}) * t = {dist}, "
+            f"t = {dist} / {v_a + v_b} = {t} ore. "
+            f"{name_a} percorre {v_a} * {t} = {d_a} km."
+        )
+        tip = "Quando due si avvicinano: tempo = distanza / (v1 + v2). Poi distanza_singolo = velocita * tempo."
+        return question, str(correct), distractors, explanation, tip
+
+    # ================================================================
     #  Template registry by difficulty
     # ================================================================
 
-    def _get_templates(self, difficulty):
+    def _get_equation_templates(self, difficulty):
         level_1 = [
             self._tank_fill,
             self._discount_price,
@@ -716,6 +980,31 @@ class WordModeler(Exercise):
             return level_2
         else:
             return level_3
+
+    def _get_numeric_templates(self, difficulty):
+        level_1 = [
+            self._numeric_age_sum,
+            self._numeric_discount,
+            self._numeric_percentage_of,
+        ]
+        level_2 = [
+            self._numeric_average_add,
+            self._numeric_work_rate,
+            self._numeric_profit,
+        ]
+        level_3 = [
+            self._numeric_system_ages,
+            self._numeric_combined_distance,
+        ]
+        if difficulty == 1:
+            return level_1
+        elif difficulty == 2:
+            return level_2
+        else:
+            return level_3
+
+    def _get_templates(self, difficulty):
+        return self._get_equation_templates(difficulty) + self._get_numeric_templates(difficulty)
 
     def generate(self, difficulty: int) -> dict:
         difficulty = max(1, min(3, difficulty))

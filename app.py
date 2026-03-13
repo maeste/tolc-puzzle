@@ -15,9 +15,44 @@ EXERCISE_TYPES = {
     "statistics": {"name": "Statistica", "icon": "📊", "desc": "Media, mediana, varianza e altro"},
     "analytic_geo": {"name": "Geometria Analitica", "icon": "📏", "desc": "Rette, distanze e circonferenze nel piano"},
     "inequalities": {"name": "Disequazioni", "icon": "⚖️", "desc": "Disequazioni di 1° e 2° grado, razionali"},
+    "simplification": {"name": "Semplifica l'Espressione", "icon": "✏️", "desc": "Semplifica espressioni e identifica la forma equivalente"},
+    "always_true": {"name": "Sempre o Mai Vero?", "icon": "🤔", "desc": "Ragiona su proprietà matematiche: sempre, mai o talvolta vere?"},
+    "proportional": {"name": "Ragionamento Proporzionale", "icon": "🔄", "desc": "Ragiona su come cambiano le grandezze in una formula"},
+    "cross_topic": {"name": "Domande Trasversali", "icon": "🔗", "desc": "Domande che combinano più aree tematiche"},
 }
 
 exercise_registry = {}
+
+# TOLC-B Realistic Exam Question Distribution (20 questions total)
+# Weighted to approximate actual TOLC-B exam category frequencies.
+#
+# Category breakdown:
+#   Algebra (~30%):           solve (3) + inequalities (2) + trap (1) = 6 questions
+#   Geometria (~20%):         geometry (2) + analytic_geo (2)         = 4 questions
+#   Funzioni/Grafici (~20%):  word (2) + graph (2)                   = 4 questions
+#   Probabilita (~15%):       probability (3)                        = 3 questions
+#   Statistica/Logica (~15%): statistics (2) + logic (1)             = 3 questions
+#                                                               Total = 20 questions
+#
+# Excluded types:
+#   estimation -- requires special handling not yet implemented
+REALISTIC_EXAM_WEIGHTS = {
+    "solve": 2,           # Algebra (primary)
+    "inequalities": 2,    # Algebra
+    "trap": 1,            # Algebra (common-mistake recognition)
+    "simplification": 1,  # Semplificazione espressioni (TOLC-31)
+    "always_true": 1,     # Ragionamento teorico (TOLC-32)
+    "proportional": 1,    # Ragionamento proporzionale (TOLC-34)
+    "geometry": 2,        # Geometria (SVG)
+    "analytic_geo": 1,    # Geometria analitica
+    "word": 1,            # Funzioni / word problems
+    "probability": 2,     # Probabilita
+    "statistics": 1,      # Statistica
+    "logic": 1,           # Logica
+    "graph": 2,           # Grafici di funzioni (SVG) -- TOLC-25
+    "cross_topic": 2,     # Domande trasversali (TOLC-36)
+}
+# Sanity check: sum = 2+2+1+1+1+1+2+1+1+2+1+1+2+2 = 20
 
 
 def register_exercise(type_key, cls):
@@ -56,6 +91,18 @@ register_exercise("analytic_geo", AnalyticGeometry)
 
 from exercises.inequalities import InequalitiesExercise
 register_exercise("inequalities", InequalitiesExercise)
+
+from exercises.simplification import SimplificationExercise
+register_exercise("simplification", SimplificationExercise)
+
+from exercises.always_true import AlwaysTrueExercise
+register_exercise("always_true", AlwaysTrueExercise)
+
+from exercises.proportional_reasoning import ProportionalReasoning
+register_exercise("proportional", ProportionalReasoning)
+
+from exercises.cross_topic import CrossTopicExercise
+register_exercise("cross_topic", CrossTopicExercise)
 
 
 @app.route("/")
@@ -111,14 +158,18 @@ def api_simulation_exercises():
     import random as _random
     distribution = [
         "trap", "trap",
-        "word", "word",
+        "word",
         "graph", "graph",
-        "logic", "logic",
+        "logic",
         "probability", "probability",
         "geometry", "geometry",
-        "estimation", "estimation",
-        "solve", "solve", "solve",
-        "statistics", "statistics", "statistics",
+        "estimation",
+        "solve", "solve",
+        "statistics", "statistics",
+        "simplification",
+        "always_true",
+        "proportional",
+        "cross_topic", "cross_topic",
     ]
     _random.shuffle(distribution)
     exercises = []
@@ -139,33 +190,34 @@ def realistic_exam():
 
 @app.route("/api/realistic-exam/exercises")
 def api_realistic_exam_exercises():
-    """Generate 20 text-only exercises for realistic TOLC-B exam format."""
+    """Generate 20 exercises for realistic TOLC-B exam format.
+
+    Uses REALISTIC_EXAM_WEIGHTS to build the question distribution,
+    approximating real TOLC-B category frequencies.
+    Includes SVG graph questions (graph, geometry types).
+    """
     import random as _random
-    # Use types that work well in text-only format (no graph type)
-    text_types = [
-        "trap", "trap",
-        "word", "word",
-        "logic", "logic",
-        "solve", "solve", "solve",
-        "statistics", "statistics",
-        "analytic_geo", "analytic_geo",
-        "inequalities", "inequalities",
-        "probability", "probability",
-        "geometry", "geometry",
-        "estimation",
-    ]
-    _random.shuffle(text_types)
+    # Build the flat distribution list from the weights config
+    exam_types = []
+    for ex_type, count in REALISTIC_EXAM_WEIGHTS.items():
+        exam_types.extend([ex_type] * count)
+    _random.shuffle(exam_types)
     exercises = []
-    for ex_type in text_types:
+    for ex_type in exam_types:
         difficulty = _random.choice([1, 2, 2, 2, 3])
         ex = exercise_registry[ex_type]()
         data = ex.generate(difficulty)
         data["type"] = ex_type
         data["difficulty"] = difficulty
-        # Remove graphical data for text-only format
-        data.pop("graph_data", None)
+        # Keep graph_data when present (SVG rendered client-side)
+        # Some types (e.g. trap) use "steps" instead of "options";
+        # normalise to "options" for consistent exam format.
+        if "options" not in data and "steps" in data:
+            data["options"] = data.pop("steps")
         # Ensure exactly 5 options
-        if len(data.get("options", [])) < 5:
+        if "options" not in data:
+            data["options"] = []
+        if len(data["options"]) < 5:
             while len(data["options"]) < 5:
                 data["options"].append("Nessuna delle precedenti")
         elif len(data.get("options", [])) > 5:

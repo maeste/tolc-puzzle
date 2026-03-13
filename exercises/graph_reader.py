@@ -1431,6 +1431,520 @@ class GraphReader(Exercise):
         }
 
     # ------------------------------------------------------------------
+    # Inverse templates: given a graph, answer a question about it
+    # ------------------------------------------------------------------
+
+    def _template_inverse_preimage(self) -> dict:
+        """Osserva il grafico di f. Trova tutti i valori di x tali che f(x) = f(a)."""
+        # Use a quadratic a(x-h)^2 + k with integer vertex
+        h = random.choice([-1, 0, 1, 2])
+        k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        a_coeff = random.choice([-1, 1])
+
+        func = _quadratic(a_coeff, h, k)
+        expr_str = _expr_quadratic(a_coeff, h, k)
+
+        # Pick an x-value that is NOT the vertex so there's a symmetric partner
+        offset = random.choice([1, 2, 3])
+        x_a = h + offset
+        # The symmetric point is h - offset
+        x_sym = h - offset
+        y_val = func(x_a)
+
+        x_range = (min(x_sym, h) - 3, max(x_a, h) + 3)
+        yr = max(abs(k) + 5, abs(y_val) + 2, 6)
+        y_range = (-yr, yr)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        correct = f"x = {_fmt_num(x_sym)} e x = {_fmt_num(x_a)}"
+
+        # Generate distractors
+        distractors = [
+            f"x = {_fmt_num(x_a)}",
+            f"x = {_fmt_num(h)}",
+            f"x = {_fmt_num(x_sym)} e x = {_fmt_num(x_a + 1)}",
+            f"x = {_fmt_num(x_sym - 1)} e x = {_fmt_num(x_a + 1)}",
+            f"x = {_fmt_num(h)} e x = {_fmt_num(x_a)}",
+            f"x = {_fmt_num(x_sym)} e x = {_fmt_num(h)}",
+        ]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"La funzione {expr_str} è una parabola con vertice in ({_fmt_num(h)}, {_fmt_num(k)}). "
+            f"f({_fmt_num(x_a)}) = {_fmt_num(y_val)}. Per simmetria rispetto all'asse x = {_fmt_num(h)}, "
+            f"anche f({_fmt_num(x_sym)}) = {_fmt_num(y_val)}. "
+            f"Quindi f(x) = f({_fmt_num(x_a)}) per x = {_fmt_num(x_sym)} e x = {_fmt_num(x_a)}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Trova tutti i valori di x tali che f(x) = f({_fmt_num(x_a)})."
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "La preimmagine di un valore y₀ è l'insieme di tutti gli x "
+                "tali che f(x) = y₀. Per una parabola, la preimmagine di ogni "
+                "valore (tranne il vertice) contiene esattamente due punti simmetrici."
+            ),
+        }
+
+    def _template_inverse_sign(self) -> dict:
+        """Osserva il grafico. In quale intervallo f(x) < 0?"""
+        # Quadratic with known integer roots: f(x) = a(x - r1)(x - r2)
+        r1 = random.randint(-4, 0)
+        r2 = r1 + random.randint(2, 5)
+        a_coeff = random.choice([-1, 1])
+
+        def func(x):
+            return a_coeff * (x - r1) * (x - r2)
+
+        # Standard form for display
+        a_std = a_coeff
+        b_std = -a_coeff * (r1 + r2)
+        c_std = a_coeff * r1 * r2
+        expr_str = _expr_quadratic_standard(a_std, b_std, c_std)
+
+        x_range = (min(r1, r2) - 3, max(r1, r2) + 3)
+        # Compute vertex y-value for range
+        vertex_x = (r1 + r2) / 2
+        vertex_y = func(vertex_x)
+        yr = max(abs(vertex_y) + 2, 6)
+        y_range = (-yr, yr)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        if a_coeff > 0:
+            # f(x) < 0 between the roots
+            correct = f"({_fmt_num(r1)}, {_fmt_num(r2)})"
+            distractors = [
+                f"(-∞, {_fmt_num(r1)}) ∪ ({_fmt_num(r2)}, +∞)",
+                f"[{_fmt_num(r1)}, {_fmt_num(r2)}]",
+                f"(-∞, {_fmt_num(r1)})",
+                f"({_fmt_num(r2)}, +∞)",
+                f"(-∞, {_fmt_num(r1 - 1)}) ∪ ({_fmt_num(r2 + 1)}, +∞)",
+                f"({_fmt_num(r1 - 1)}, {_fmt_num(r2 + 1)})",
+            ]
+        else:
+            # f(x) < 0 outside the roots
+            correct = f"(-∞, {_fmt_num(r1)}) ∪ ({_fmt_num(r2)}, +∞)"
+            distractors = [
+                f"({_fmt_num(r1)}, {_fmt_num(r2)})",
+                f"[{_fmt_num(r1)}, {_fmt_num(r2)}]",
+                f"(-∞, {_fmt_num(r1)})",
+                f"({_fmt_num(r2)}, +∞)",
+                f"(-∞, {_fmt_num(r1 - 1)}) ∪ ({_fmt_num(r2 + 1)}, +∞)",
+                f"({_fmt_num(r1 + 1)}, {_fmt_num(r2 - 1)})",
+            ]
+
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        direction = "verso l'alto" if a_coeff > 0 else "verso il basso"
+        explanation = (
+            f"La parabola {expr_str} ha radici x = {_fmt_num(r1)} e x = {_fmt_num(r2)}, "
+            f"con apertura {direction}. "
+        )
+        if a_coeff > 0:
+            explanation += (
+                f"Una parabola rivolta verso l'alto è negativa tra le radici: "
+                f"f(x) < 0 per x ∈ ({_fmt_num(r1)}, {_fmt_num(r2)})."
+            )
+        else:
+            explanation += (
+                f"Una parabola rivolta verso il basso è negativa fuori dalle radici: "
+                f"f(x) < 0 per x ∈ (-∞, {_fmt_num(r1)}) ∪ ({_fmt_num(r2)}, +∞)."
+            )
+
+        return {
+            "question": f"Osserva il grafico di {expr_str}. In quale intervallo f(x) < 0?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Lo studio del segno di una funzione è fondamentale per risolvere "
+                "disequazioni. Il grafico rende immediato capire dove la funzione "
+                "è positiva (sopra l'asse x) o negativa (sotto l'asse x)."
+            ),
+        }
+
+    def _template_inverse_increasing(self) -> dict:
+        """Osserva il grafico. In quale intervallo f è crescente?"""
+        h = random.choice([-2, -1, 0, 1, 2])
+        k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        a_coeff = random.choice([-1, 1])
+
+        func = _quadratic(a_coeff, h, k)
+        expr_str = _expr_quadratic(a_coeff, h, k)
+
+        x_range = (h - 5, h + 5)
+        yr = max(abs(k) + 5, 6)
+        y_range = (-yr, yr)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        if a_coeff > 0:
+            # Parabola up: increasing on (h, +∞)
+            correct = f"({_fmt_num(h)}, +∞)"
+            distractors = [
+                f"(-∞, {_fmt_num(h)})",
+                f"({_fmt_num(h - 1)}, +∞)",
+                f"(-∞, {_fmt_num(h + 1)})",
+                "(-∞, +∞)",
+                f"[{_fmt_num(h)}, +∞)",
+                f"({_fmt_num(h + 1)}, +∞)",
+            ]
+        else:
+            # Parabola down: increasing on (-∞, h)
+            correct = f"(-∞, {_fmt_num(h)})"
+            distractors = [
+                f"({_fmt_num(h)}, +∞)",
+                f"(-∞, {_fmt_num(h + 1)})",
+                f"(-∞, {_fmt_num(h - 1)})",
+                "(-∞, +∞)",
+                f"(-∞, {_fmt_num(h)}]",
+                f"({_fmt_num(h - 1)}, +∞)",
+            ]
+
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        direction = "verso l'alto" if a_coeff > 0 else "verso il basso"
+        explanation = (
+            f"La parabola {expr_str} ha vertice in ({_fmt_num(h)}, {_fmt_num(k)}) "
+            f"con apertura {direction}. "
+        )
+        if a_coeff > 0:
+            explanation += (
+                f"Una parabola rivolta verso l'alto è crescente a destra del vertice: "
+                f"f è crescente per x ∈ ({_fmt_num(h)}, +∞)."
+            )
+        else:
+            explanation += (
+                f"Una parabola rivolta verso il basso è crescente a sinistra del vertice: "
+                f"f è crescente per x ∈ (-∞, {_fmt_num(h)})."
+            )
+
+        return {
+            "question": f"Osserva il grafico di {expr_str}. In quale intervallo f è crescente?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Una funzione è crescente in un intervallo se, presi due punti "
+                "qualsiasi x₁ < x₂ nell'intervallo, si ha f(x₁) < f(x₂). "
+                "Graficamente, il grafico 'sale' da sinistra a destra."
+            ),
+        }
+
+    def _template_inverse_max_min(self) -> dict:
+        """Osserva il grafico. Qual è il valore massimo (o minimo) di f nell'intervallo [a, b]?"""
+        h = random.choice([-2, -1, 0, 1, 2])
+        k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+        a_coeff = random.choice([-1, 1])
+
+        func = _quadratic(a_coeff, h, k)
+        expr_str = _expr_quadratic(a_coeff, h, k)
+
+        # Interval containing the vertex
+        margin = random.choice([2, 3, 4])
+        interval_a = h - margin
+        interval_b = h + margin
+
+        x_range = (interval_a - 2, interval_b + 2)
+        # Compute values at interval endpoints and vertex
+        val_left = func(interval_a)
+        val_right = func(interval_b)
+        val_vertex = k
+
+        if a_coeff > 0:
+            # Parabola up: min at vertex
+            extreme_type = "minimo"
+            correct_val = val_vertex
+        else:
+            # Parabola down: max at vertex
+            extreme_type = "massimo"
+            correct_val = val_vertex
+
+        yr = max(abs(val_left) + 2, abs(val_right) + 2, abs(val_vertex) + 2, 6)
+        y_range = (-yr, yr)
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        correct = _fmt_num(correct_val)
+
+        # Generate numeric distractors
+        distractor_vals = set()
+        distractor_vals.add(int(val_left))
+        distractor_vals.add(int(val_right))
+        for delta in [-2, -1, 1, 2]:
+            distractor_vals.add(int(correct_val) + delta)
+        distractor_vals.discard(int(correct_val))
+        distractors = [_fmt_num(v) for v in sorted(distractor_vals)]
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        # Ensure we have 4 distractors
+        fallback = -10
+        while len(distractors) < 4:
+            d = _fmt_num(fallback)
+            if d != correct and d not in distractors:
+                distractors.append(d)
+            fallback += 1
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"La parabola {expr_str} ha vertice in ({_fmt_num(h)}, {_fmt_num(k)}). "
+            f"Nell'intervallo [{_fmt_num(interval_a)}, {_fmt_num(interval_b)}], "
+            f"il vertice è contenuto, quindi il valore {extreme_type} è {correct}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Qual è il valore {extreme_type} di f "
+                f"nell'intervallo [{_fmt_num(interval_a)}, {_fmt_num(interval_b)}]?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Il teorema di Weierstrass garantisce che una funzione continua "
+                "su un intervallo chiuso e limitato [a, b] ammette sempre un "
+                "massimo e un minimo assoluti."
+            ),
+        }
+
+    def _template_inverse_range(self) -> dict:
+        """Osserva il grafico. Qual è il codominio (immagine) di f?"""
+        variant = random.choice(["quadratic_up", "quadratic_down", "sin"])
+
+        if variant == "quadratic_up":
+            h = random.choice([-2, -1, 0, 1, 2])
+            k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+            func = _quadratic(1, h, k)
+            expr_str = _expr_quadratic(1, h, k)
+            x_range = (h - 5, h + 5)
+            yr = max(abs(k) + 8, 10)
+            y_range = (-yr + k, yr + k)
+            correct = f"[{_fmt_num(k)}, +∞)"
+            distractors = [
+                f"({_fmt_num(k)}, +∞)",
+                f"(-∞, {_fmt_num(k)}]",
+                "(-∞, +∞)",
+                f"[{_fmt_num(k - 1)}, +∞)",
+                f"[{_fmt_num(k + 1)}, +∞)",
+                f"[0, +∞)",
+            ]
+        elif variant == "quadratic_down":
+            h = random.choice([-2, -1, 0, 1, 2])
+            k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+            func = _quadratic(-1, h, k)
+            expr_str = _expr_quadratic(-1, h, k)
+            x_range = (h - 5, h + 5)
+            yr = max(abs(k) + 8, 10)
+            y_range = (-yr + k, yr + k)
+            correct = f"(-∞, {_fmt_num(k)}]"
+            distractors = [
+                f"(-∞, {_fmt_num(k)})",
+                f"[{_fmt_num(k)}, +∞)",
+                "(-∞, +∞)",
+                f"(-∞, {_fmt_num(k + 1)}]",
+                f"(-∞, {_fmt_num(k - 1)}]",
+                f"(-∞, 0]",
+            ]
+        else:  # sin
+            a_sin = random.choice([1, 2, 3])
+            k_sin = random.choice([-2, -1, 0, 1, 2])
+            func = _sin_func(a_sin, 1, 0, k_sin)
+            expr_str = _expr_sin(a_sin, 1, 0, k_sin)
+            x_range = (-7, 7)
+            y_range = (-a_sin - abs(k_sin) - 2, a_sin + abs(k_sin) + 2)
+            lo = k_sin - a_sin
+            hi = k_sin + a_sin
+            correct = f"[{_fmt_num(lo)}, {_fmt_num(hi)}]"
+            k = k_sin  # for distractors
+            distractors = [
+                f"({_fmt_num(lo)}, {_fmt_num(hi)})",
+                f"[{_fmt_num(lo - 1)}, {_fmt_num(hi + 1)}]",
+                "(-∞, +∞)",
+                f"[-{_fmt_num(a_sin)}, {_fmt_num(a_sin)}]",
+                f"[{_fmt_num(lo + 1)}, {_fmt_num(hi - 1)}]" if a_sin > 1 else f"[0, {_fmt_num(hi)}]",
+                f"[{_fmt_num(lo)}, {_fmt_num(hi + 1)}]",
+            ]
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        distractors = [d for d in distractors if d != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"L'immagine (codominio effettivo) di {expr_str} è l'insieme di tutti "
+            f"i valori y che la funzione assume. "
+            f"Osservando il grafico, i valori di y coprono l'intervallo {correct}."
+        )
+
+        return {
+            "question": f"Osserva il grafico di {expr_str}. Qual è il codominio (immagine) di f?",
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "L'immagine di una funzione è il sottoinsieme del codominio "
+                "effettivamente raggiunto dalla funzione. Per una parabola y = x² "
+                "l'immagine è [0, +∞), non tutto ℝ."
+            ),
+        }
+
+    def _template_inverse_intersections(self) -> dict:
+        """Osserva il grafico. Quante soluzioni ha l'equazione f(x) = k?"""
+        variant = random.choice(["quadratic", "cubic"])
+
+        if variant == "quadratic":
+            h = random.choice([-2, -1, 0, 1, 2])
+            v_k = random.choice([-3, -2, -1, 0, 1, 2, 3])
+            a_coeff = random.choice([-1, 1])
+            func = _quadratic(a_coeff, h, v_k)
+            expr_str = _expr_quadratic(a_coeff, h, v_k)
+
+            x_range = (h - 5, h + 5)
+            yr = max(abs(v_k) + 6, 8)
+            y_range = (-yr, yr)
+
+            # Choose k value to get a known number of intersections
+            case = random.choice(["zero", "one", "two"])
+            if a_coeff > 0:
+                if case == "zero":
+                    k_line = v_k - random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    k_line = v_k
+                    n_solutions = 1
+                else:
+                    k_line = v_k + random.randint(1, 4)
+                    n_solutions = 2
+            else:
+                if case == "zero":
+                    k_line = v_k + random.randint(1, 3)
+                    n_solutions = 0
+                elif case == "one":
+                    k_line = v_k
+                    n_solutions = 1
+                else:
+                    k_line = v_k - random.randint(1, 4)
+                    n_solutions = 2
+        else:
+            # Cubic: f(x) = (x - r1)(x - r2)(x - r3) for 3 distinct roots
+            roots = sorted(random.sample(range(-3, 4), 3))
+            r1, r2, r3 = roots
+
+            def func(x):
+                return (x - r1) * (x - r2) * (x - r3)
+
+            expr_str = f"f(x) = (x{_fmt_num(-r1, always_sign=True)})(x{_fmt_num(-r2, always_sign=True)})(x{_fmt_num(-r3, always_sign=True)})"
+
+            x_range = (r1 - 2, r3 + 2)
+            # Evaluate at some points for y_range
+            test_vals = [func(x) for x in range(r1 - 2, r3 + 3)]
+            yr = max(abs(min(test_vals)), abs(max(test_vals)), 6) + 2
+            y_range = (-yr, yr)
+
+            # Choose k for 1 or 3 intersections
+            case = random.choice(["one", "three"])
+            if case == "three":
+                # k=0 gives exactly 3 solutions (the roots)
+                k_line = 0
+                n_solutions = 3
+            else:
+                # k large enough to have only 1 intersection
+                k_line = int(yr) - 1
+                if k_line == 0:
+                    k_line = int(yr)
+                n_solutions = 1
+
+        graph_svg = _build_svg(func, x_range, y_range, label=expr_str)
+
+        # Add horizontal line for y=k
+        ox_start, oy_k = _world_to_svg(x_range[0], k_line, x_range, y_range)
+        ox_end, _ = _world_to_svg(x_range[1], k_line, x_range, y_range)
+        line_svg = (
+            f'<line x1="{ox_start:.1f}" y1="{oy_k:.1f}" '
+            f'x2="{ox_end:.1f}" y2="{oy_k:.1f}" '
+            f'stroke="#dc2626" stroke-width="1" stroke-dasharray="4,4"/>'
+        )
+        label_svg = (
+            f'<text x="{ox_end - 5:.1f}" y="{oy_k - 5:.1f}" '
+            f'font-size="9" fill="#dc2626" text-anchor="end">y = {_fmt_num(k_line)}</text>'
+        )
+        graph_svg = graph_svg.replace("</svg>", f"{line_svg}{label_svg}</svg>")
+
+        correct = str(n_solutions)
+        all_options = ["0", "1", "2", "3", "4"]
+        distractors = [o for o in all_options if o != correct]
+        random.shuffle(distractors)
+        distractors = distractors[:4]
+
+        options_raw = [correct] + distractors
+        correct_index = 0
+        options, correct_index = self.shuffle_options(options_raw, correct_index)
+
+        explanation = (
+            f"Per trovare le soluzioni di f(x) = {_fmt_num(k_line)}, si traccia la retta "
+            f"orizzontale y = {_fmt_num(k_line)} e si contano le intersezioni con il grafico. "
+            f"In questo caso le intersezioni sono {n_solutions}."
+        )
+
+        return {
+            "question": (
+                f"Osserva il grafico di {expr_str}. "
+                f"Quante soluzioni ha l'equazione f(x) = {_fmt_num(k_line)}?"
+            ),
+            "graph_data": graph_svg,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": (
+                "Il numero di soluzioni di f(x) = k corrisponde al numero di "
+                "intersezioni tra il grafico di f e la retta orizzontale y = k. "
+                "Questo è il principio alla base del test della retta orizzontale "
+                "per l'iniettività."
+            ),
+        }
+
+    # ------------------------------------------------------------------
 
     def generate(self, difficulty: int) -> dict:
         difficulty = max(1, min(3, difficulty))
@@ -1445,13 +1959,19 @@ class GraphReader(Exercise):
                 self._template_injectivity,
                 self._template_invertibility,
                 self._template_codomain,
+                self._template_inverse_sign,
+                self._template_inverse_increasing,
+                self._template_inverse_max_min,
+                self._template_inverse_intersections,
             ]
             if difficulty == 3:
                 domain_templates.append(self._template_sign_of_function)
                 domain_templates.append(self._template_injectivity_intervals)
+                domain_templates.append(self._template_inverse_preimage)
+                domain_templates.append(self._template_inverse_range)
 
-            # ~35% chance of a domain/evaluation/sign template at L2+
-            if random.random() < 0.35:
+            # ~45% chance of a domain/evaluation/sign/inverse template at L2+
+            if random.random() < 0.45:
                 template_fn = random.choice(domain_templates)
                 return template_fn()
 

@@ -1100,6 +1100,565 @@ def _t3_lcm_three_numbers():
 
 
 # ---------------------------------------------------------------------------
+# TRIGONOMETRY Templates
+# ---------------------------------------------------------------------------
+
+# Notable trigonometric values table
+_TRIG_NOTABLE = {
+    0: {"sin": 0, "cos": 1, "tan": 0},
+    30: {"sin": 0.5, "cos": math.sqrt(3) / 2, "tan": math.sqrt(3) / 3},
+    45: {"sin": math.sqrt(2) / 2, "cos": math.sqrt(2) / 2, "tan": 1},
+    60: {"sin": math.sqrt(3) / 2, "cos": 0.5, "tan": math.sqrt(3)},
+    90: {"sin": 1, "cos": 0, "tan": None},
+}
+
+_TRIG_NOTABLE_STR = {
+    (0, "sin"): "0", (0, "cos"): "1", (0, "tan"): "0",
+    (30, "sin"): "1/2", (30, "cos"): "√3/2", (30, "tan"): "√3/3",
+    (45, "sin"): "√2/2", (45, "cos"): "√2/2", (45, "tan"): "1",
+    (60, "sin"): "√3/2", (60, "cos"): "1/2", (60, "tan"): "√3",
+    (90, "sin"): "1", (90, "cos"): "0",
+}
+
+
+def _trig_str_distractors(correct_str, angle, func):
+    """Generate plausible wrong trig value answers."""
+    all_values = set()
+    for a in _TRIG_NOTABLE_STR:
+        all_values.add(_TRIG_NOTABLE_STR[a])
+    # Add some common wrong answers
+    all_values.update(["1/2", "√2/2", "√3/2", "√3/3", "0", "1", "√3", "2", "-1"])
+    all_values.discard(correct_str)
+    distractors = list(all_values)
+    random.shuffle(distractors)
+    return distractors[:4]
+
+
+def _t1_trig_notable_values():
+    """Ask for a notable trigonometric value: sin/cos/tan of 0°, 30°, 45°, 60°."""
+    func = random.choice(["sin", "cos", "tan"])
+    if func == "tan":
+        angle = random.choice([0, 30, 45, 60])
+    else:
+        angle = random.choice([0, 30, 45, 60, 90])
+
+    correct_str = _TRIG_NOTABLE_STR[(angle, func)]
+    distractors = _trig_str_distractors(correct_str, angle, func)
+
+    question = f"Quanto vale {func}({angle}°)?"
+    explanation = (
+        f"Dai valori notevoli della trigonometria: {func}({angle}°) = {correct_str}."
+    )
+    tip = (
+        "Valori notevoli: sin(30°)=1/2, sin(45°)=√2/2, sin(60°)=√3/2, "
+        "cos(30°)=√3/2, cos(45°)=√2/2, cos(60°)=1/2, tan(45°)=1."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t1_trig_basic_identity():
+    """If sin(α) = a/c, find cos(α) using sin²+cos²=1."""
+    # Use Pythagorean triples for clean answers
+    triples = [(3, 4, 5), (5, 12, 13), (8, 15, 17), (7, 24, 25)]
+    a, b, c = random.choice(triples)
+    # sin = a/c, cos = b/c or vice versa
+    if random.choice([True, False]):
+        sin_val, cos_val = a, b
+        given_func, asked_func = "sin", "cos"
+    else:
+        sin_val, cos_val = b, a
+        given_func, asked_func = "cos", "sin"
+
+    given_str = _fmt_fraction(sin_val, c)
+    correct_str = _fmt_fraction(cos_val, c)
+    distractors = _make_fraction_distractors(cos_val, c)
+
+    question = (
+        f"Se {given_func}(α) = {given_str} e α e' un angolo del primo quadrante, "
+        f"quanto vale {asked_func}(α)?"
+    )
+    explanation = (
+        f"Usiamo l'identita' fondamentale: sin²(α) + cos²(α) = 1.\n"
+        f"{given_func}²(α) = ({given_str})² = {sin_val**2}/{c**2}\n"
+        f"{asked_func}²(α) = 1 - {sin_val**2}/{c**2} = {cos_val**2}/{c**2}\n"
+        f"{asked_func}(α) = {cos_val}/{c} = {correct_str} (positivo nel primo quadrante)."
+    )
+    tip = "L'identita' fondamentale sin²(α) + cos²(α) = 1 permette di trovare una funzione dall'altra."
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t2_trig_equation_simple():
+    """How many solutions does sin(x)=k or cos(x)=k have in [0°, 360°)?"""
+    scenarios = [
+        ("sin", "1/2", 2, "sin(x)=1/2 ha soluzioni x=30° e x=150°"),
+        ("sin", "√2/2", 2, "sin(x)=√2/2 ha soluzioni x=45° e x=135°"),
+        ("sin", "√3/2", 2, "sin(x)=√3/2 ha soluzioni x=60° e x=120°"),
+        ("sin", "1", 1, "sin(x)=1 ha unica soluzione x=90°"),
+        ("sin", "0", 2, "sin(x)=0 ha soluzioni x=0° e x=180°"),
+        ("cos", "1/2", 2, "cos(x)=1/2 ha soluzioni x=60° e x=300°"),
+        ("cos", "√2/2", 2, "cos(x)=√2/2 ha soluzioni x=45° e x=315°"),
+        ("cos", "√3/2", 2, "cos(x)=√3/2 ha soluzioni x=30° e x=330°"),
+        ("cos", "0", 2, "cos(x)=0 ha soluzioni x=90° e x=270°"),
+        ("cos", "1", 1, "cos(x)=1 ha unica soluzione x=0°"),
+    ]
+    func, val_str, n_solutions, detail = random.choice(scenarios)
+    result = float(n_solutions)
+
+    question = (
+        f"Quante soluzioni ha l'equazione {func}(x) = {val_str} "
+        f"nell'intervallo [0°, 360°)?"
+    )
+    explanation = (
+        f"{detail}.\n"
+        f"Quindi ci sono {n_solutions} soluzioni nell'intervallo [0°, 360°)."
+    )
+    tip = (
+        "Nell'intervallo [0°, 360°), sin(x)=k e cos(x)=k hanno generalmente "
+        "2 soluzioni (tranne per k=±1 che ne hanno 1, e k=0 che ne ha 2)."
+    )
+    return question, result, explanation, tip
+
+
+def _t2_trig_expression():
+    """Evaluate trigonometric expressions using notable values."""
+    variant = random.randint(1, 3)
+
+    if variant == 1:
+        # sin²(a) + cos²(a) = 1
+        angle = random.choice([30, 45, 60])
+        result = 1.0
+        question = f"Calcola sin²({angle}°) + cos²({angle}°)."
+        explanation = (
+            f"Per l'identita' fondamentale, sin²(α) + cos²(α) = 1 per ogni α.\n"
+            f"Quindi sin²({angle}°) + cos²({angle}°) = 1."
+        )
+    elif variant == 2:
+        # sin(a)·cos(b) + cos(a)·sin(b) = sin(a+b)
+        a, b = random.choice([(30, 60), (30, 45)])
+        sin_a = _TRIG_NOTABLE[a]["sin"]
+        cos_a = _TRIG_NOTABLE[a]["cos"]
+        sin_b = _TRIG_NOTABLE[b]["sin"]
+        cos_b = _TRIG_NOTABLE[b]["cos"]
+        result = round(sin_a * cos_b + cos_a * sin_b, 10)
+        sum_angle = a + b
+        question = (
+            f"Calcola sin({a}°)·cos({b}°) + cos({a}°)·sin({b}°)."
+        )
+        explanation = (
+            f"Questa e' la formula di addizione: sin(α+β) = sin(α)cos(β) + cos(α)sin(β).\n"
+            f"Quindi sin({a}°)·cos({b}°) + cos({a}°)·sin({b}°) = sin({sum_angle}°) = {_fmt(result)}."
+        )
+    else:
+        # 2·sin(a)·cos(a) = sin(2a)
+        a = random.choice([30, 45])
+        sin_a = _TRIG_NOTABLE[a]["sin"]
+        cos_a = _TRIG_NOTABLE[a]["cos"]
+        result = round(2 * sin_a * cos_a, 10)
+        question = f"Calcola 2·sin({a}°)·cos({a}°)."
+        explanation = (
+            f"Questa e' la formula del seno doppio: 2·sin(α)·cos(α) = sin(2α).\n"
+            f"2·sin({a}°)·cos({a}°) = sin({2 * a}°) = {_fmt(result)}."
+        )
+
+    tip = (
+        "Formule utili: sin(α+β) = sin(α)cos(β)+cos(α)sin(β), "
+        "sin(2α) = 2·sin(α)·cos(α), cos(2α) = cos²(α)-sin²(α)."
+    )
+    return question, result, explanation, tip
+
+
+def _t2_trig_convert_deg_rad():
+    """Convert degrees to radians or vice versa."""
+    variant = random.randint(1, 2)
+
+    deg_rad_map = {
+        30: ("π/6", 1, 6), 45: ("π/4", 1, 4), 60: ("π/3", 1, 3),
+        90: ("π/2", 1, 2), 120: ("2π/3", 2, 3), 135: ("3π/4", 3, 4),
+        150: ("5π/6", 5, 6), 180: ("π", 1, 1), 210: ("7π/6", 7, 6),
+        270: ("3π/2", 3, 2), 300: ("5π/3", 5, 3), 360: ("2π", 2, 1),
+    }
+
+    if variant == 1:
+        # Degrees to radians (string answer)
+        angle = random.choice(list(deg_rad_map.keys()))
+        correct_str, num, den = deg_rad_map[angle]
+        # Generate distractors: other radian values
+        other_rads = [v[0] for k, v in deg_rad_map.items() if k != angle]
+        random.shuffle(other_rads)
+        distractors = other_rads[:4]
+
+        question = f"Converti {angle}° in radianti."
+        explanation = (
+            f"Per convertire gradi in radianti: radianti = gradi × π/180.\n"
+            f"{angle}° = {angle} × π/180 = {correct_str}."
+        )
+        tip = "Conversione: radianti = gradi × π/180. Gradi = radianti × 180/π."
+        return question, correct_str, distractors, explanation, tip
+    else:
+        # Radians to degrees (numeric answer)
+        angle = random.choice(list(deg_rad_map.keys()))
+        rad_str, num, den = deg_rad_map[angle]
+        result = float(angle)
+
+        question = f"Converti {rad_str} radianti in gradi."
+        explanation = (
+            f"Per convertire radianti in gradi: gradi = radianti × 180/π.\n"
+            f"{rad_str} = {rad_str} × 180/π = {_fmt(result)}°."
+        )
+        tip = "Conversione: gradi = radianti × 180/π. Angoli importanti: π/6=30°, π/4=45°, π/3=60°, π/2=90°."
+        return question, result, explanation, tip
+
+
+def _t3_trig_equation_parametric():
+    """For which values of k does sin(x)=k have solutions?"""
+    variant = random.randint(1, 2)
+
+    if variant == 1:
+        # sin(x) = k has solutions iff -1 <= k <= 1
+        k = random.choice([0.5, 1.5, -0.5, 2, -1, 1, 0, -2, 3])
+        has_solution = -1 <= k <= 1
+        result = 1.0 if has_solution else 0.0
+        question = (
+            f"L'equazione sin(x) = {_fmt(k)} ha soluzioni reali? "
+            f"Rispondi 1 per si', 0 per no."
+        )
+        explanation = (
+            f"La funzione sin(x) ha codominio [-1, 1].\n"
+            f"Poiche' {_fmt(k)} {'appartiene' if has_solution else 'non appartiene'} "
+            f"all'intervallo [-1, 1], l'equazione "
+            f"{'ha' if has_solution else 'non ha'} soluzioni."
+        )
+    else:
+        # Find the range of sin or cos
+        func = random.choice(["sin", "cos"])
+        # "Qual e' il valore massimo di sin(x) + 3?"
+        offset = random.randint(1, 5)
+        result = float(1 + offset)  # max of sin/cos is 1
+        question = (
+            f"Qual e' il valore massimo di {func}(x) + {offset}?"
+        )
+        explanation = (
+            f"Il valore massimo di {func}(x) e' 1.\n"
+            f"Quindi il valore massimo di {func}(x) + {offset} = 1 + {offset} = {_fmt(result)}."
+        )
+
+    tip = "sin(x) e cos(x) hanno codominio [-1, 1]. Il massimo e' 1, il minimo e' -1."
+    return question, result, explanation, tip
+
+
+def _t3_trig_simplification():
+    """Simplify trigonometric expressions like (1-cos²x)/sinx = sinx."""
+    variant = random.randint(1, 3)
+
+    if variant == 1:
+        # (1 - cos²(α)) / sin(α) = sin²(α)/sin(α) = sin(α)
+        angle = random.choice([30, 45, 60])
+        sin_val = _TRIG_NOTABLE[angle]["sin"]
+        result = round(sin_val, 10)
+        question = (
+            f"Semplifica e calcola (1 - cos²({angle}°)) / sin({angle}°)."
+        )
+        explanation = (
+            f"Per l'identita' fondamentale: 1 - cos²(α) = sin²(α).\n"
+            f"Quindi (1 - cos²({angle}°)) / sin({angle}°) = sin²({angle}°) / sin({angle}°) = sin({angle}°) = {_fmt(result)}."
+        )
+    elif variant == 2:
+        # tan(α) · cos(α) = sin(α)
+        angle = random.choice([30, 45, 60])
+        sin_val = _TRIG_NOTABLE[angle]["sin"]
+        result = round(sin_val, 10)
+        question = (
+            f"Semplifica e calcola tan({angle}°) · cos({angle}°)."
+        )
+        explanation = (
+            f"tan(α) = sin(α)/cos(α), quindi tan(α)·cos(α) = sin(α).\n"
+            f"tan({angle}°)·cos({angle}°) = sin({angle}°) = {_fmt(result)}."
+        )
+    else:
+        # sin²(α) + cos²(α) + tan²(α) = 1 + tan²(α) = 1/cos²(α)
+        angle = random.choice([30, 45, 60])
+        cos_val = _TRIG_NOTABLE[angle]["cos"]
+        result = round(1.0 / (cos_val ** 2), 10)
+        question = (
+            f"Calcola sin²({angle}°) + cos²({angle}°) + tan²({angle}°)."
+        )
+        explanation = (
+            f"sin²(α) + cos²(α) = 1, quindi l'espressione vale 1 + tan²({angle}°).\n"
+            f"Per l'identita': 1 + tan²(α) = 1/cos²(α).\n"
+            f"1/cos²({angle}°) = 1/({_fmt(cos_val)})² = {_fmt(result)}."
+        )
+
+    tip = (
+        "Identita' utili: sin²+cos²=1, 1+tan²=1/cos², "
+        "tan=sin/cos, (1-cos²)/sin = sin."
+    )
+    return question, result, explanation, tip
+
+
+# ---------------------------------------------------------------------------
+# EXPONENTIAL & LOGARITHMIC Templates
+# ---------------------------------------------------------------------------
+
+def _t1_exp_basic():
+    """Solve b^x = b^n for x (same base)."""
+    base = random.choice([2, 3, 5, 10])
+    n = random.randint(1, 6)
+    target = base ** n
+    result = float(n)
+
+    question = f"Risolvi l'equazione {base}^x = {target}. Quanto vale x?"
+    explanation = (
+        f"{target} = {base}^{n}, quindi {base}^x = {base}^{n}.\n"
+        f"Uguagliando gli esponenti: x = {n}."
+    )
+    tip = "Se a^x = a^n con a > 0 e a ≠ 1, allora x = n."
+    return question, result, explanation, tip
+
+
+def _t1_log_basic():
+    """Compute log_b(v) where v is a perfect power of b."""
+    base = random.choice([2, 3, 5, 10])
+    exp = random.randint(1, 5)
+    value = base ** exp
+    result = float(exp)
+
+    question = f"Calcola log_{base}({value})."
+    explanation = (
+        f"log_{base}({value}) = x significa {base}^x = {value}.\n"
+        f"Poiche' {base}^{exp} = {value}, il risultato e' {exp}."
+    )
+    tip = "log_b(x) = n significa b^n = x. In pratica, il logaritmo chiede: 'a quale potenza devo elevare la base?'"
+    return question, result, explanation, tip
+
+
+def _t2_exp_equation_different_bases():
+    """Solve a^x = b where a and b have a common base: e.g. 4^x = 2^6."""
+    common_base = random.choice([2, 3])
+    exp_a = random.choice([2, 3])  # a = common_base^exp_a
+    a = common_base ** exp_a
+    exp_target = random.choice([2, 3, 4, 6])
+    target = common_base ** exp_target
+
+    # a^x = target => (common_base^exp_a)^x = common_base^exp_target
+    # => exp_a * x = exp_target => x = exp_target / exp_a
+    x_val = exp_target / exp_a
+    result = float(x_val)
+
+    question = f"Risolvi l'equazione {a}^x = {target}. Quanto vale x?"
+    explanation = (
+        f"Scriviamo tutto in base {common_base}: {a} = {common_base}^{exp_a} e {target} = {common_base}^{exp_target}.\n"
+        f"({common_base}^{exp_a})^x = {common_base}^{exp_target}\n"
+        f"{common_base}^({exp_a}x) = {common_base}^{exp_target}\n"
+        f"{exp_a}x = {exp_target}, quindi x = {exp_target}/{exp_a} = {_fmt(result)}."
+    )
+    tip = "Per risolvere equazioni esponenziali con basi diverse, cerca di ricondurle alla stessa base."
+    return question, result, explanation, tip
+
+
+def _t2_log_properties():
+    """Use log properties: log(a·b) = log(a)+log(b), log(a^n) = n·log(a)."""
+    base = random.choice([2, 3, 5, 10])
+    variant = random.randint(1, 3)
+
+    if variant == 1:
+        # log_b(a·c) where a and c are powers of b
+        exp1 = random.randint(1, 3)
+        exp2 = random.randint(1, 3)
+        val1 = base ** exp1
+        val2 = base ** exp2
+        product = val1 * val2
+        result = float(exp1 + exp2)
+        question = f"Calcola log_{base}({product}) sapendo che {product} = {val1} × {val2}."
+        explanation = (
+            f"log_{base}({product}) = log_{base}({val1} × {val2}) = log_{base}({val1}) + log_{base}({val2})\n"
+            f"= {exp1} + {exp2} = {_fmt(result)}."
+        )
+    elif variant == 2:
+        # n · log_b(v) = log_b(v^n)
+        exp = random.randint(1, 4)
+        n = random.randint(2, 3)
+        val = base ** exp
+        result = float(n * exp)
+        question = f"Calcola {n} · log_{base}({val})."
+        explanation = (
+            f"{n} · log_{base}({val}) = {n} × {exp} = {_fmt(result)}.\n"
+            f"(Proprieta': n·log(a) = log(a^n), quindi = log_{base}({val}^{n}) = log_{base}({val ** n}))."
+        )
+    else:
+        # log_b(a/c)
+        exp1 = random.randint(2, 5)
+        exp2 = random.randint(1, exp1 - 1)
+        val1 = base ** exp1
+        val2 = base ** exp2
+        result = float(exp1 - exp2)
+        question = f"Calcola log_{base}({val1}/{val2})."
+        explanation = (
+            f"log_{base}({val1}/{val2}) = log_{base}({val1}) - log_{base}({val2})\n"
+            f"= {exp1} - {exp2} = {_fmt(result)}."
+        )
+
+    tip = (
+        "Proprieta' dei logaritmi: log(a·b) = log(a)+log(b), "
+        "log(a/b) = log(a)-log(b), log(a^n) = n·log(a)."
+    )
+    return question, result, explanation, tip
+
+
+def _t3_log_domain():
+    """Find the minimum value of x for log function domain."""
+    base = random.choice([2, 3, 10])
+    # f(x) = log_base(x - a) requires x - a > 0 => x > a
+    a = random.randint(-5, 10)
+
+    variant = random.randint(1, 2)
+    if variant == 1:
+        # log_b(x - a), domain: x > a
+        result = float(a)
+        question = (
+            f"Qual e' il valore minimo (escluso) che puo' assumere x affinche' "
+            f"f(x) = log_{base}(x - {a}) sia definita?"
+        )
+        sign_a = f"- {a}" if a >= 0 else f"+ {abs(a)}"
+        explanation = (
+            f"La funzione logaritmo e' definita solo per argomento positivo.\n"
+            f"x {sign_a} > 0 => x > {a}.\n"
+            f"Il valore minimo (escluso) e' x = {a}."
+        )
+    else:
+        # log_b(2x - a), domain: x > a/2
+        a = random.choice([2, 4, 6, 8, 10])
+        result = float(a / 2)
+        question = (
+            f"Qual e' il valore minimo (escluso) che puo' assumere x affinche' "
+            f"f(x) = log_{base}(2x - {a}) sia definita?"
+        )
+        explanation = (
+            f"La funzione logaritmo e' definita solo per argomento positivo.\n"
+            f"2x - {a} > 0 => 2x > {a} => x > {a}/2 = {_fmt(result)}.\n"
+            f"Il valore minimo (escluso) e' x = {_fmt(result)}."
+        )
+
+    tip = "Il dominio di log_b(f(x)) richiede f(x) > 0. Risolvi la disequazione nell'argomento."
+    return question, result, explanation, tip
+
+
+def _t3_exp_inequality():
+    """Solve exponential inequalities: b^x > b^n."""
+    base = random.choice([2, 3, 5])
+    n = random.randint(1, 5)
+    target = base ** n
+
+    variant = random.randint(1, 2)
+    if variant == 1:
+        # b^x > target => x > n (base > 1)
+        result = float(n + 1)  # smallest integer > n
+        question = (
+            f"Risolvi la disequazione {base}^x > {target}. "
+            f"Qual e' il piu' piccolo intero che soddisfa la disequazione?"
+        )
+        explanation = (
+            f"{target} = {base}^{n}, quindi {base}^x > {base}^{n}.\n"
+            f"Poiche' la base {base} > 1, la funzione esponenziale e' crescente:\n"
+            f"x > {n}. Il piu' piccolo intero e' {_fmt(result)}."
+        )
+    else:
+        # b^x <= target => x <= n
+        result = float(n)  # largest integer <= n
+        question = (
+            f"Risolvi la disequazione {base}^x ≤ {target}. "
+            f"Qual e' il piu' grande intero che soddisfa la disequazione?"
+        )
+        explanation = (
+            f"{target} = {base}^{n}, quindi {base}^x ≤ {base}^{n}.\n"
+            f"Poiche' la base {base} > 1, la funzione esponenziale e' crescente:\n"
+            f"x ≤ {n}. Il piu' grande intero e' {_fmt(result)}."
+        )
+
+    tip = (
+        "Per disequazioni esponenziali con base > 1: b^x > b^n => x > n "
+        "(la funzione e' crescente, il verso si conserva)."
+    )
+    return question, result, explanation, tip
+
+
+# ---------------------------------------------------------------------------
+# Rational Exponent Templates
+# ---------------------------------------------------------------------------
+
+
+def _t1_rational_exponent_basic():
+    """Simplify (sqrt(a))^n where n is even, result is a^(n/2) integer.
+
+    Example: (sqrt(2))^6 = 2^3 = 8
+    """
+    a = random.choice([2, 3, 5])
+    half_exp = random.randint(2, 5)
+    n = half_exp * 2  # ensure n is even so a^(n/2) is integer
+    result = float(a ** half_exp)
+
+    question = f"Semplifica (√{a})^{n}. Quanto vale?"
+    explanation = (
+        f"(√{a})^{n} = ({a}^(1/2))^{n} = {a}^({n}/2) = {a}^{half_exp} = {_fmt(result)}."
+    )
+    tip = (
+        "Ricorda che √a = a^(1/2), quindi (√a)^n = a^(n/2). "
+        "Se n e' pari, il risultato e' una potenza intera della base."
+    )
+    return question, result, explanation, tip
+
+
+def _t2_rational_exponent_cube():
+    """Simplify (cbrt(a))^n where n is multiple of 3, result is a^(n/3) integer.
+
+    Example: (cbrt(3))^9 = 3^3 = 27
+    """
+    a = random.choice([2, 3, 5])
+    third_exp = random.randint(2, 4)
+    n = third_exp * 3  # ensure n is multiple of 3
+    result = float(a ** third_exp)
+
+    question = f"Semplifica (∛{a})^{n}. Quanto vale?"
+    explanation = (
+        f"(∛{a})^{n} = ({a}^(1/3))^{n} = {a}^({n}/3) = {a}^{third_exp} = {_fmt(result)}."
+    )
+    tip = (
+        "Ricorda che ∛a = a^(1/3), quindi (∛a)^n = a^(n/3). "
+        "Se n e' multiplo di 3, il risultato e' una potenza intera della base."
+    )
+    return question, result, explanation, tip
+
+
+def _t2_rational_exponent_general():
+    """Simplify a^(m/n) where a is a perfect n-th power and result is integer.
+
+    Example: 8^(2/3) = (8^(1/3))^2 = 2^2 = 4
+    """
+    # Pick a small base and root index, then build a = base^n so a^(1/n) = base
+    base = random.choice([2, 3, 5])
+    n = random.choice([2, 3])  # root index
+    m = random.randint(2, 4)   # numerator exponent
+    # Ensure m/n is not an integer already (that would be trivial)
+    while m % n == 0:
+        m = random.randint(2, 4)
+    a = base ** n  # a is a perfect n-th power
+    result = float(base ** m)
+
+    # Build readable step-by-step
+    root_name = "quadrata" if n == 2 else "cubica"
+    question = f"Calcola {a}^({m}/{n}). Quanto vale?"
+    explanation = (
+        f"{a}^({m}/{n}) = ({a}^(1/{n}))^{m}.\n"
+        f"La radice {root_name} di {a} e' {base} (perche' {base}^{n} = {a}).\n"
+        f"Quindi {a}^({m}/{n}) = {base}^{m} = {_fmt(result)}."
+    )
+    tip = (
+        "a^(m/n) si puo' calcolare come (a^(1/n))^m, cioe' prima si estrae "
+        "la radice n-esima e poi si eleva alla potenza m."
+    )
+    return question, result, explanation, tip
+
+
+# ---------------------------------------------------------------------------
 # Template registries
 # ---------------------------------------------------------------------------
 
@@ -1113,6 +1672,9 @@ _NUMERIC_TEMPLATES_L1 = [
     _t1_simple_expression,
     _t1_gcd_two_simple,
     _t1_lcm_two_simple,
+    _t1_exp_basic,
+    _t1_log_basic,
+    _t1_rational_exponent_basic,
 ]
 
 _NUMERIC_TEMPLATES_L2 = [
@@ -1124,6 +1686,12 @@ _NUMERIC_TEMPLATES_L2 = [
     _t2_gcd_lcm,
     _t2_lcm_periodicity,
     _t2_gcd_equal_groups,
+    _t2_trig_equation_simple,
+    _t2_trig_expression,
+    _t2_exp_equation_different_bases,
+    _t2_log_properties,
+    _t2_rational_exponent_cube,
+    _t2_rational_exponent_general,
 ]
 
 _NUMERIC_TEMPLATES_L3 = [
@@ -1135,6 +1703,10 @@ _NUMERIC_TEMPLATES_L3 = [
     _t3_compound_fraction,
     _t3_gcd_three_numbers,
     _t3_lcm_three_numbers,
+    _t3_trig_equation_parametric,
+    _t3_trig_simplification,
+    _t3_log_domain,
+    _t3_exp_inequality,
 ]
 
 # Templates that return (question, correct_str, distractors_list, explanation, tip)
@@ -1142,6 +1714,13 @@ _NUMERIC_TEMPLATES_L3 = [
 _STRING_TEMPLATES_L1 = [
     _t1_fraction_addition,
     _t2_fraction_simplification,
+    _t1_trig_notable_values,
+    _t1_trig_basic_identity,
+]
+
+# Some L2 templates return 5-tuple (string) depending on variant
+_STRING_TEMPLATES_L2 = [
+    _t2_trig_convert_deg_rad,
 ]
 
 
@@ -1150,63 +1729,22 @@ class SolveExercise(Exercise):
 
     TEMPLATES_L1_NUMERIC = _NUMERIC_TEMPLATES_L1
     TEMPLATES_L1_STRING = _STRING_TEMPLATES_L1
-    TEMPLATES_L2 = _NUMERIC_TEMPLATES_L2
+    TEMPLATES_L2_NUMERIC = _NUMERIC_TEMPLATES_L2
+    TEMPLATES_L2_STRING = _STRING_TEMPLATES_L2
     TEMPLATES_L3 = _NUMERIC_TEMPLATES_L3
 
-    def generate(self, difficulty: int) -> dict:
-        difficulty = max(1, min(3, difficulty))
-
-        if difficulty == 1:
-            # Mix numeric and string templates
-            all_templates = (
-                [(t, "numeric") for t in self.TEMPLATES_L1_NUMERIC]
-                + [(t, "string") for t in self.TEMPLATES_L1_STRING]
-            )
-            template_fn, ttype = random.choice(all_templates)
-
-            if ttype == "string":
-                question, correct_str, distractors, explanation, tip = template_fn()
-                options = [correct_str] + distractors[:4]
-                correct_index = 0
-                options, correct_index = Exercise.shuffle_options(options, correct_index)
-
-                return {
-                    "question": question,
-                    "options": options,
-                    "correct_index": correct_index,
-                    "explanation": explanation,
-                    "did_you_know": tip,
-                    "difficulty": difficulty,
-                }
-            else:
-                question, correct_value, explanation, tip = template_fn()
-                correct_str = _fmt(correct_value)
-                distractors = _make_distractors(correct_value)
-                options = [correct_str] + distractors[:4]
-                correct_index = 0
-                options, correct_index = Exercise.shuffle_options(options, correct_index)
-
-                return {
-                    "question": question,
-                    "options": options,
-                    "correct_index": correct_index,
-                    "explanation": explanation,
-                    "did_you_know": tip,
-                    "difficulty": difficulty,
-                }
-
-        elif difficulty == 2:
-            templates = self.TEMPLATES_L2
+    @staticmethod
+    def _build_from_result(result_tuple, difficulty):
+        """Build exercise dict from a template result (4-tuple numeric or 5-tuple string)."""
+        if len(result_tuple) == 5:
+            question, correct_str, distractors, explanation, tip = result_tuple
+            options = [str(correct_str)] + [str(d) for d in distractors[:4]]
         else:
-            templates = self.TEMPLATES_L3
+            question, correct_value, explanation, tip = result_tuple
+            correct_str = _fmt(correct_value)
+            distractors = _make_distractors(correct_value)
+            options = [correct_str] + distractors[:4]
 
-        template_fn = random.choice(templates)
-        question, correct_value, explanation, tip = template_fn()
-
-        correct_str = _fmt(correct_value)
-        distractors = _make_distractors(correct_value)
-
-        options = [correct_str] + distractors[:4]
         correct_index = 0
         options, correct_index = Exercise.shuffle_options(options, correct_index)
 
@@ -1218,3 +1756,23 @@ class SolveExercise(Exercise):
             "did_you_know": tip,
             "difficulty": difficulty,
         }
+
+    def generate(self, difficulty: int) -> dict:
+        difficulty = max(1, min(3, difficulty))
+
+        if difficulty == 1:
+            all_templates = (
+                list(self.TEMPLATES_L1_NUMERIC)
+                + list(self.TEMPLATES_L1_STRING)
+            )
+        elif difficulty == 2:
+            all_templates = (
+                list(self.TEMPLATES_L2_NUMERIC)
+                + list(self.TEMPLATES_L2_STRING)
+            )
+        else:
+            all_templates = list(self.TEMPLATES_L3)
+
+        template_fn = random.choice(all_templates)
+        result_tuple = template_fn()
+        return self._build_from_result(result_tuple, difficulty)
