@@ -22,6 +22,7 @@ EXERCISE_TYPES = {
     "number_sense": {"name": "Senso Numerico", "icon": "🔢", "desc": "Percentuali, frazioni, potenze e notazione scientifica"},
     "which_satisfies": {"name": "Quale Soddisfa?", "icon": "🎯", "desc": "Identifica quale oggetto matematico soddisfa una proprietà"},
     "composition": {"name": "Composizione di Funzioni", "icon": "🔗", "desc": "Esercizi sulla composizione f(g(x)), decomposizione e dominio"},
+    "strategy": {"name": "Scelta Strategica", "icon": "🧭", "desc": "Scegli la strategia più efficiente per risolvere il problema"},
 }
 
 exercise_registry = {}
@@ -119,6 +120,9 @@ register_exercise("which_satisfies", WhichSatisfies)
 from exercises.function_composition import FunctionComposition
 register_exercise("composition", FunctionComposition)
 
+from exercises.strategy_selection import StrategySelection
+register_exercise("strategy", StrategySelection)
+
 
 @app.route("/")
 def dashboard():
@@ -199,6 +203,11 @@ def api_simulation_exercises():
         data["difficulty"] = difficulty
         exercises.append(data)
     return jsonify(exercises)
+
+
+@app.route("/time-training")
+def time_training():
+    return render_template("time_training.html", exercise_types=EXERCISE_TYPES)
 
 
 @app.route("/realistic-exam")

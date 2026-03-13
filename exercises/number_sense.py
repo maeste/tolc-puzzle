@@ -17,6 +17,7 @@ class NumberSense(Exercise):
                 self._decimal_to_fraction,
                 self._power_small_decimal,
                 self._fraction_of_quantity,
+                self._division_remainder_basic,
             ]
         elif difficulty == 2:
             templates = [
@@ -24,6 +25,8 @@ class NumberSense(Exercise):
                 self._percentage_time_conversion,
                 self._power_rules_numeric,
                 self._scientific_notation_order,
+                self._division_remainder_find_number,
+                self._division_remainder_properties,
             ]
         else:
             templates = [
@@ -31,6 +34,7 @@ class NumberSense(Exercise):
                 self._nested_fraction_compute,
                 self._estimation_product,
                 self._percentage_reverse,
+                self._division_remainder_word_problem,
             ]
 
         template_fn = random.choice(templates)
@@ -819,6 +823,260 @@ class NumberSense(Exercise):
             "dividi il prezzo finale per (1 + p/100), NON sottrarre p%. "
             "Ad esempio, se dopo +20% il prezzo è 120€, "
             "l'originale è 120/1.2 = 100€, non 120 - 24 = 96€."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    # ================================================================
+    #  Division with Remainder (4 templates across L1, L2, L3)
+    # ================================================================
+
+    def _division_remainder_basic(self) -> dict:
+        """L1 — Basic remainder calculation."""
+        b = random.randint(3, 13)
+        a = random.randint(20, 200)
+        # Ensure there is a non-zero remainder for a more interesting question
+        while a % b == 0:
+            a = random.randint(20, 200)
+
+        remainder = a % b
+        quotient = a // b
+
+        correct = str(remainder)
+
+        # Distractors based on common errors
+        distractors = [
+            str(quotient),                          # confuse quotient with remainder
+            str(remainder + 1),                     # off-by-one high
+            str(max(0, remainder - 1)),             # off-by-one low
+            str(b - remainder),                     # complement to divisor
+            str(abs(a - b)),                        # wrong operation: subtraction
+            str(quotient + 1),                      # quotient off-by-one
+        ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = f"Qual è il resto della divisione di {a} per {b}?"
+        explanation = (
+            f"Calcola {a} ÷ {b} = {quotient} con resto {remainder}. "
+            f"Verifica: {quotient} × {b} + {remainder} = "
+            f"{quotient * b} + {remainder} = {a}."
+        )
+        did_you_know = (
+            "Il resto della divisione di a per b è sempre compreso tra 0 e b−1. "
+            "Si può calcolare come a − (a ÷ b) × b, dove la divisione è intera."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _division_remainder_find_number(self) -> dict:
+        """L2 — Find the number given divisor and remainder."""
+        d = random.randint(4, 12)
+        r = random.randint(1, d - 1)
+        k = random.randint(3, 15)
+        n = k * d + r
+
+        correct = str(n)
+
+        # Distractors: numbers that give different remainders
+        distractors = []
+        # Number with remainder r+1 (or r-1)
+        distractors.append(str(k * d + min(r + 1, d - 1)))
+        distractors.append(str(k * d + max(r - 1, 0)))
+        # The quotient itself
+        distractors.append(str(k))
+        # A multiple of d (remainder 0)
+        distractors.append(str(k * d))
+        # Different k, same structure but wrong
+        distractors.append(str((k + 1) * d + r + 1))
+        distractors.append(str((k - 1) * d))
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = f"Quale dei seguenti numeri, diviso per {d}, dà resto {r}?"
+        explanation = (
+            f"Un numero che diviso per {d} dà resto {r} ha la forma "
+            f"k × {d} + {r}. Con k = {k}: {k} × {d} + {r} = {n}. "
+            f"Verifica: {n} ÷ {d} = {k} con resto {r}."
+        )
+        did_you_know = (
+            "Tutti i numeri che danno lo stesso resto r quando divisi per d "
+            "formano una classe di equivalenza modulo d. "
+            "Si scrivono come n ≡ r (mod d)."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _division_remainder_word_problem(self) -> dict:
+        """L3 — Word problem involving division with remainder."""
+        contexts = [
+            {
+                "items": "studenti",
+                "groups": "gruppi",
+                "group_word": "gruppo",
+                "container": "da",
+                "remainder_verb": "restano",
+                "template": (
+                    "Ci sono {n} {items} da dividere in {groups} {container} {g}. "
+                    "Quanti {groups} completi si formano e quanti {items} {remainder_verb}?"
+                ),
+            },
+            {
+                "items": "biscotti",
+                "groups": "sacchetti",
+                "group_word": "sacchetto",
+                "container": "da",
+                "remainder_verb": "avanzano",
+                "template": (
+                    "Si devono confezionare {n} {items} in {groups} {container} {g}. "
+                    "Quanti {groups} completi si riempiono e quanti {items} {remainder_verb}?"
+                ),
+            },
+            {
+                "items": "pagine",
+                "groups": "capitoli",
+                "group_word": "capitolo",
+                "container": "da",
+                "remainder_verb": "restano",
+                "template": (
+                    "Un libro ha {n} {items} da distribuire in {groups} {container} {g} {items} ciascuno. "
+                    "Quanti {groups} completi ci sono e quante {items} {remainder_verb}?"
+                ),
+            },
+        ]
+
+        ctx = random.choice(contexts)
+        g = random.randint(4, 9)
+        n = random.randint(30, 120)
+        # Ensure non-zero remainder
+        while n % g == 0:
+            n = random.randint(30, 120)
+
+        q = n // g
+        r = n % g
+
+        correct = f"{q} {ctx['groups']} completi, {r} {ctx['items']} {ctx['remainder_verb']}"
+
+        # Distractors based on common errors
+        distractors = [
+            # Swap quotient and remainder
+            f"{r} {ctx['groups']} completi, {q} {ctx['items']} {ctx['remainder_verb']}",
+            # Off-by-one on groups (round up)
+            f"{q + 1} {ctx['groups']} completi, {0} {ctx['items']} {ctx['remainder_verb']}",
+            # Off-by-one on remainder
+            f"{q} {ctx['groups']} completi, {r + 1} {ctx['items']} {ctx['remainder_verb']}",
+            # Wrong operation: subtraction
+            f"{q - 1} {ctx['groups']} completi, {r + g} {ctx['items']} {ctx['remainder_verb']}",
+            # Remainder = g - r (complement error)
+            f"{q} {ctx['groups']} completi, {g - r} {ctx['items']} {ctx['remainder_verb']}",
+        ]
+
+        # Filter out duplicates of the correct answer
+        unique_distractors = []
+        seen = {correct}
+        for dist in distractors:
+            if dist not in seen:
+                seen.add(dist)
+                unique_distractors.append(dist)
+
+        # Pad if needed
+        fallback_idx = 2
+        while len(unique_distractors) < 4:
+            fb = f"{q + fallback_idx} {ctx['groups']} completi, {max(0, r - fallback_idx)} {ctx['items']} {ctx['remainder_verb']}"
+            if fb not in seen:
+                seen.add(fb)
+                unique_distractors.append(fb)
+            fallback_idx += 1
+
+        options = [correct] + unique_distractors[:4]
+        correct_index = 0
+        options, correct_index = Exercise.shuffle_options(options, correct_index)
+
+        question = ctx["template"].format(
+            n=n, items=ctx["items"], groups=ctx["groups"],
+            container=ctx["container"], g=g, remainder_verb=ctx["remainder_verb"],
+        )
+        explanation = (
+            f"{n} ÷ {g} = {q} con resto {r}. "
+            f"Si formano {q} {ctx['groups']} completi e {ctx['remainder_verb']} "
+            f"{r} {ctx['items']}. "
+            f"Verifica: {q} × {g} + {r} = {q * g} + {r} = {n}."
+        )
+        did_you_know = (
+            "Nei problemi di divisione con resto nella vita reale, il resto "
+            "indica gli elementi che non riempiono completamente un gruppo. "
+            "Se servono gruppi per tutti, bisogna arrotondare per eccesso il quoziente."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _division_remainder_properties(self) -> dict:
+        """L2 — Properties of remainders with related divisors."""
+        # Pick d1 and d2 where d2 divides d1
+        pairs = [
+            (6, 3), (6, 2), (8, 4), (8, 2), (10, 5), (10, 2),
+            (12, 6), (12, 4), (12, 3), (12, 2), (9, 3), (15, 5), (15, 3),
+        ]
+        d1, d2 = random.choice(pairs)
+
+        # Pick a remainder r1 for division by d1 (non-zero)
+        r1 = random.randint(1, d1 - 1)
+
+        # The remainder of n divided by d2 is r1 % d2
+        correct_r2 = r1 % d2
+
+        correct = str(correct_r2)
+
+        # Distractors: other possible remainders for d2
+        distractors = []
+        for candidate in range(0, d2):
+            if candidate != correct_r2:
+                distractors.append(str(candidate))
+        # Add some plausible wrong answers
+        distractors.append(str(r1))           # use the original remainder
+        distractors.append(str(d2 - correct_r2) if correct_r2 != 0 else str(d2 - 1))
+        distractors.append(str(d1 - r1))      # complement in d1
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = (
+            f"Se il resto della divisione di n per {d1} è {r1}, "
+            f"quale potrebbe essere il resto della divisione di n per {d2}?"
+        )
+        explanation = (
+            f"Se n = k × {d1} + {r1} per qualche intero k, allora poiché {d1} è "
+            f"divisibile per {d2}, abbiamo n = k × {d1} + {r1}. "
+            f"Dividendo {r1} per {d2}: {r1} ÷ {d2} = {r1 // d2} con resto {correct_r2}. "
+            f"Quindi il resto di n ÷ {d2} è {correct_r2}."
+        )
+        did_you_know = (
+            "Se d2 divide d1, allora il resto di n diviso d2 dipende solo dal resto "
+            "di n diviso d1. In particolare, se n ha resto r1 nella divisione per d1, "
+            "allora il resto nella divisione per d2 è semplicemente r1 mod d2."
         )
 
         return {

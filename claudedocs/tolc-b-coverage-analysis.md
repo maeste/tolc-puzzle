@@ -7,7 +7,7 @@
 
 ## 1. Panoramica
 
-Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **57 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 6 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v4 (TOLC-38→42): Number Sense (12 template aritmetica pura), Which Satisfies (10 template meta-formato), combinatorica vincolata (4 template), word problems numerici TOLC-style (5 template), ribilanciamento pesi simulazione. Implementazioni v5 (TOLC-50→52): Function Composition (7 template composizione funzioni), Geometric Transformations (9 template trasformazioni geometriche), Estimation in Exam (stima inclusa in simulazione esame). **~191 template** distribuiti su **18 moduli**, **1804 test** automatizzati. Assessment v4 (§10): copertura domande reali 40q dal 67.5% al 87.5%.
+Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **57 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 6 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v4 (TOLC-38→42): Number Sense (12 template aritmetica pura), Which Satisfies (10 template meta-formato), combinatorica vincolata (4 template), word problems numerici TOLC-style (5 template), ribilanciamento pesi simulazione. Implementazioni v5 (TOLC-50→52): Function Composition (7 template composizione funzioni), Geometric Transformations (9 template trasformazioni geometriche), Estimation in Exam (stima inclusa in simulazione esame). **~191 template** distribuiti su **18 moduli**, **2041 test** automatizzati. Assessment v4 (§10): copertura domande reali 40q dal 67.5% al 87.5%.
 
 ### Legenda Stati
 
@@ -40,6 +40,7 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Logaritmi e proprietà | Trap Calculator (tipo A) + Solve Exercise (tipo H) | **COPERTO** | Trappole su proprietà logaritmiche + template exp/log |
 | Potenze e radicali | Trap Calculator (tipo A) + Estimation Blitz (tipo G) | **COPERTO** | |
 | Potenze con esponente razionale | Solve Exercise (tipo H) | **IMPLEMENTATO** | 3 template: (√a)^n, (∛a)^n, a^(m/n) — risultati sempre interi — 2026-03-12 |
+| Divisione con resto | Number Sense (tipo E) | **IMPLEMENTATO** | 4 template: resto base (L1), trova numero dato resto (L2), proprietà modulari (L2), word problem (L3) — 19 test — 2026-03-13 |
 
 ### 2.2 Funzioni
 
@@ -55,6 +56,7 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Composizione di funzioni | Function Composition (tipo R) | **IMPLEMENTATO** | 7 template: valutazione f(g(x)), identificazione formula, composizione da tabella, ordine importa, decomposizione, dominio composizione, tripla composizione — 162 test — 2026-03-13 |
 | Equazioni/disequazioni da grafici | Graph Reader (tipo C) | **IMPLEMENTATO** | 7 template: f(x)=a (trova x), conta soluzioni, f(x)>a intervalli, segno f(x)≥0, f(x)=g(x) intersezioni, f(x)>g(x) intervalli, soluzioni in intervallo — SVG con retta tratteggiata y=a — 64 test — 2026-03-13 |
 | Effetto parametri su grafici | Graph Reader (tipo C) | **IMPLEMENTATO** | 8 template: effetto coeff. quadratico, traslazione verticale/orizzontale, dilatazione verticale, riflessione, trasformazione combinata, effetto parametri sin/exp, identificazione formula — SVG multi-curva — 38 test — 2026-03-13 |
+| Rappresentazioni multiple | Graph Reader (tipo C) | **IMPLEMENTATO** | 10 template: tabella→formula (L1-L3), tabella→grafico (L2-L3), verbale→formula (L1-L2), conversione forma (L2-L3) — 52 test — 2026-03-13 |
 
 ### 2.3 Geometria Euclidea
 
@@ -114,6 +116,8 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Varianza | Statistics Exercise (tipo I) | **EXTRA** | Marcato come "Approfondimento" (L3) — 2026-03-12 |
 | Deviazione standard | Statistics Exercise (tipo I) | **EXTRA** | Marcato come "Approfondimento" (L3) — 2026-03-12 |
 | Quartili e percentili | Statistics Exercise (tipo I) | **EXTRA** | Marcato come "Approfondimento" (L3) — 2026-03-12 |
+| Variabili qualitative e quantitative | Statistics Exercise (tipo I) | **IMPLEMENTATO** | 4 template: classificazione base (L1), classificazione+grafico (L2), discreta vs continua (L2), analisi dataset (L3) — 26 test — 2026-03-13 |
+| Frequenza assoluta e relativa | Statistics Exercise (tipo I) | **IMPLEMENTATO** | 5 template: frequenza assoluta da dati (L1), frequenza da istogramma (L1), frequenza relativa e percentuale (L2), confronto frequenze (L2), ricostruzione da tabella frequenza (L3) — 18 test — 2026-03-14 |
 | Outlier detection | Statistics Exercise (tipo I) | **EXTRA** | Non richiesto dal syllabus base |
 
 ### 2.8 Modellizzazione e Problem Solving
@@ -134,7 +138,9 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Ragionamento proporzionale | Proportional Reasoning (tipo N) | **IMPLEMENTATO** | 6 template: proporzionalità diretta, inversa, quadratica, percentuali composte, variazione parametri, variazione combinata — 2026-03-12 |
 | Lettura grafici inversa | Graph Reader (tipo C) | **IMPLEMENTATO** | 6 template: preimmagini, segno, crescenza, max/min, codominio, intersezioni con retta — 2026-03-13 |
 | Geometria cerchio avanzata | Geometry Sherlock (tipo F) | **IMPLEMENTATO** | 4 template: angolo inscritto, distanza corda, lunghezza arco, potenza di un punto — 2026-03-13 |
+| Rappresentazioni multiple (cross-cutting) | Graph Reader (tipo C) | **IMPLEMENTATO** | Tabella↔formula↔grafico↔verbale, conversioni tra forme — 52 test — 2026-03-13 |
 | Domande cross-topic | Cross Topic (tipo O) | **IMPLEMENTATO** | 5 template: algebra+geometria, quadratica+analitica, probabilità+combinatoria, trig+geometria, funzioni+statistica — 2026-03-13 |
+| Scelta strategica | Strategy Selection (tipo S) | **IMPLEMENTATO** | 12 template: strategia equazioni (L1, 4t), strategia semplificazione (L2, 4t), approccio geometrico (L3, 4t) — 28 test — 2026-03-14 |
 
 ---
 
@@ -142,14 +148,14 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 
 | Stato | Conteggio | Percentuale |
 |-------|-----------|-------------|
-| COPERTO | 34 | 60% |
-| IMPLEMENTATO | 23 | 40% |
+| COPERTO | 34 | 58% |
+| IMPLEMENTATO | 25 | 42% |
 | PARZIALE | 0 | 0% |
 | ASSENTE | 0 | 0% |
 | EXTRA | 4 | — |
 
-**Copertura effettiva syllabus**: **100%** (57/57 argomenti coperti o implementati, esclusi 4 EXTRA)
-**Copertura competenze cognitive**: 7/7 competenze coperte (§2.9)
+**Copertura effettiva syllabus**: **100%** (59/59 argomenti coperti o implementati, esclusi 4 EXTRA)
+**Copertura competenze cognitive**: 8/8 competenze coperte (§2.9)
 
 ### Inventario Template (~175 totali)
 
@@ -159,7 +165,7 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Disequazioni | inequalities.py | 2 | 3 | 2 | 7 |
 | Geometria (Euclidea + Solida + Cerchio) | geometry_sherlock.py | 7 | 11 | 10 | 28 |
 | Geometria Analitica | analytic_geometry.py | 3 | 3 | 3 | 9 |
-| Statistica | statistics_exercise.py | 8 | 3 | 7 | 18 |
+| Statistica | statistics_exercise.py | 10 | 5 | 8 | 23 |
 | Semplificazione | simplification.py | 4 | 3 | 3 | 10 |
 | Sempre/Mai Vero | always_true.py | 3 | 3 | 2 | 8 |
 | Ragionamento Proporzionale | proportional_reasoning.py | 2 | 2 | 2 | 6 |
@@ -169,7 +175,8 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | **Quale Soddisfa?** | **which_satisfies.py** | **3** | **4** | **3** | **10** |
 | Word Modeler (numerici v4) | word_modeler.py | +2 | +2 | +1 | +5 |
 | Combinatorica vincolata | probability_game.py | 0 | +2 | +2 | +4 |
-| **Totale** | | **~53** | **~61** | **~55** | **~175** |
+| **Scelta Strategica** | **strategy_selection.py** | **4** | **4** | **4** | **12** |
+| **Totale** | | **~59** | **~67** | **~61** | **~192** |
 
 *Nota: conteggi includono template con naming convention _t#, template funzionali, e template aggiuntivi in moduli senza naming convention (graph_reader, word_modeler, trap_calculator, logic_puzzle, probability_game, estimation_blitz).*
 
@@ -294,7 +301,7 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Macro-aree complete | 4/8 (50%) | 8/8 (100%) | 8/8 (100%) | 9/9 (100%) | **9/9 (100%)** |
 | Moduli esercizi | 9 | 11 | 11 | 15 | **17** |
 | Template totali | ~70 | ~80 | 88 | ~138 | **~175** |
-| Test automatizzati | — | 171 | 442 | 631 | **1484** |
+| Test automatizzati | — | 171 | 442 | 631 | **2041** |
 | Simulazione: distribuzione | uniforme | uniforme | pesata TOLC-B | pesata + cognitive | **ribilanciata reale (12 tipi)** |
 | Simulazione: grafici SVG | no | no | 4 domande su 20 | 4 domande su 20 | **4 domande su 20** |
 | Simulazione: competenze cognitive | no | no | 0 domande | 7 domande su 20 | **incl. number_sense + which_satisfies** |
@@ -546,22 +553,27 @@ Restano **2 domande NON COPERTE** e **2 PARZIALI**:
 
 **Solo 1 domanda su 40 è completamente NON COPERTA** (Q4-SET-B, parabola). Le altre 2 sono PARZIALI con copertura dei concetti sottostanti.
 
-### 10.7 Valutazione Realismo Simulazione Esame: v3 → v4
+### 10.7 Valutazione Realismo Simulazione Esame: v3 → v4 → v5
 
-| Aspetto | v3 | v4 | Note |
-|---|---|---|---|
-| Formato (20q/50min/5opt) | 10/10 | 10/10 | Invariato |
-| Punteggio (+1/0/-0.25) | 10/10 | 10/10 | Invariato |
-| Navigazione domande | 8/10 | 8/10 | Invariato |
-| **Distribuzione argomenti** | 8/10 | **9/10** | Ribilanciata: number_sense(3), which_satisfies(2), rimossi tipi non-TOLC dalla simulazione |
-| **Stile domande** | 8/10 | **9/10** | Meta-formato "quale soddisfa?" + word problems numerici + aritmetica pura |
-| **Difficoltà** | 7/10 | **8/10** | Combinatorica vincolata + percentuali inverse alzano realismo |
-| **Distrattori** | 8/10 | **9/10** | NumberSense genera distrattori da errori mentali comuni (unità, ordini di grandezza, segno) |
-| **Utilità per preparazione** | 8/10 | **9/10** | Copre 87.5% delle tipologie reali vs 75% precedente |
-| **Aritmetica pura** (nuova metrica) | 0/10 | **8/10** | 3 domande su 20 dedicate a senso numerico (era 0) |
-| **Meta-formato** (nuova metrica) | 0/10 | **8/10** | 2 domande su 20 in formato "quale soddisfa?" (era 0) |
+| Aspetto | v3 | v4 | v5 | Note |
+|---|---|---|---|---|
+| Formato (20q/50min/5opt) | 10/10 | 10/10 | 10/10 | Invariato |
+| Punteggio (+1/0/-0.25) | 10/10 | 10/10 | 10/10 | Invariato |
+| **Navigazione domande** | 8/10 | 8/10 | **9/10** | Aggiunta "Modalità CISIA" forward-only opzionale (TOLC-57) |
+| **Distribuzione argomenti** | 8/10 | **9/10** | 9/10 | Invariato da v4 |
+| **Stile domande** | 8/10 | **9/10** | 9/10 | Invariato da v4 |
+| **Geometria testo** | 5/10 | 5/10 | **9/10** | Geometria text-only nella simulazione esame (TOLC-56). SVG solo in learning mode. |
+| **Difficoltà** | 7/10 | **8/10** | 8/10 | Invariato da v4 |
+| **Distrattori** | 8/10 | **9/10** | 9/10 | Invariato da v4 |
+| **Utilità per preparazione** | 8/10 | **9/10** | 9/10 | Invariato da v4 |
+| **Aritmetica pura** | 0/10 | **8/10** | 8/10 | Invariato da v4 |
+| **Meta-formato** | 0/10 | **8/10** | 8/10 | Invariato da v4 |
 
-**Score complessivo simulazione v4**: **~8.5/10** (v3 era ~7.5/10)
+**Score complessivo simulazione v5**: **~9.0/10** (v4 era ~8.5/10, v3 era ~7.5/10)
+
+Miglioramenti v5:
+- **TOLC-56**: Geometria in simulazione esame è ora text-only (come nel TOLC-B reale). I diagrammi SVG restano disponibili in modalità apprendimento.
+- **TOLC-57**: Aggiunta opzione "Modalità CISIA" con navigazione solo in avanti. Default: navigazione libera. Opt-in per chi vuole simulare il vincolo reale.
 
 ### 10.8 Confronto Distribuzione Pesi: App v4 vs TOLC Reale
 

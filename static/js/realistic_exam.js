@@ -31,6 +31,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const navigator = document.getElementById("sim-navigator");
     const questionArea = document.getElementById("sim-question-area");
 
+    // Forward-only mode
+    const chkForwardOnly = document.getElementById("chk-forward-only");
+    const forwardOnlyWarning = document.getElementById("forward-only-warning");
+    let forwardOnlyMode = false;
+
+    if (chkForwardOnly) {
+        chkForwardOnly.addEventListener("change", () => {
+            forwardOnlyWarning.classList.toggle("hidden", !chkForwardOnly.checked);
+        });
+    }
+
     // State
     let exercises = [];
     let questionStates = []; // {answered, answer, correct, skipped, timeSpent, selectedAnswer}
@@ -54,6 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnRetry) btnRetry.addEventListener("click", startExam);
 
     async function startExam() {
+        // Capture forward-only mode before switching screens
+        forwardOnlyMode = chkForwardOnly ? chkForwardOnly.checked : false;
+
         showScreen(activeScreen);
         questionArea.innerHTML = '<div class="loading">Caricamento domande...</div>';
 
@@ -77,6 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }));
         currentIndex = 0;
         remainingTime = TOTAL_TIME;
+
+        // Hide previous button in forward-only mode
+        if (forwardOnlyMode) {
+            btnPrev.style.display = "none";
+        } else {
+            btnPrev.style.display = "";
+        }
 
         buildNavigator();
         startTimer();
@@ -137,7 +158,11 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.className = "sim-nav-btn";
             btn.textContent = i + 1;
             btn.setAttribute("aria-label", `Domanda ${i + 1}`);
-            btn.addEventListener("click", () => goToQuestion(i));
+            btn.addEventListener("click", () => {
+                // In forward-only mode, only allow navigating to current or future unanswered questions
+                if (forwardOnlyMode && i < currentIndex) return;
+                goToQuestion(i);
+            });
             navigator.appendChild(btn);
         }
         updateNavigator();
@@ -146,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateNavigator() {
         const buttons = navigator.querySelectorAll(".sim-nav-btn");
         buttons.forEach((btn, i) => {
-            btn.classList.remove("sim-nav-current", "sim-nav-correct", "sim-nav-wrong", "sim-nav-skipped", "sim-nav-answered");
+            btn.classList.remove("sim-nav-current", "sim-nav-correct", "sim-nav-wrong", "sim-nav-skipped", "sim-nav-answered", "sim-nav-locked");
             const state = questionStates[i];
             if (i === currentIndex) {
                 btn.classList.add("sim-nav-current");
@@ -155,6 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.classList.add("sim-nav-answered");
             } else if (state.skipped) {
                 btn.classList.add("sim-nav-skipped");
+            }
+            // In forward-only mode, grey out past questions
+            if (forwardOnlyMode && i < currentIndex) {
+                btn.classList.add("sim-nav-locked");
+                btn.disabled = true;
             }
         });
     }
@@ -181,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         progressDisplay.textContent = `Domanda ${currentIndex + 1} di ${TOTAL_QUESTIONS}`;
 
         // Update navigation buttons
-        btnPrev.disabled = currentIndex === 0;
+        btnPrev.disabled = forwardOnlyMode || currentIndex === 0;
         btnNext.disabled = currentIndex === TOTAL_QUESTIONS - 1;
 
         // Build question HTML — clean exam-like format, text only
@@ -301,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     btnPrev.addEventListener("click", () => {
-        if (currentIndex > 0) goToQuestion(currentIndex - 1);
+        if (!forwardOnlyMode && currentIndex > 0) goToQuestion(currentIndex - 1);
     });
 
     btnNext.addEventListener("click", () => {

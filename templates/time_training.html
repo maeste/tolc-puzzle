@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Allenamento Gestione Tempo — TOLC-B{% endblock %}
+
+{% block content %}
+<!-- ====== SETUP SCREEN ====== -->
+<section id="tt-setup" class="sim-start-screen">
+    <div class="sim-intro-card">
+        <h1>Allenamento Gestione Tempo</h1>
+        <p class="sim-intro-subtitle">Impara a gestire il tempo come nel TOLC-B: rispondi velocemente, salta quando serve, elimina opzioni e indovina strategicamente.</p>
+
+        <div class="sim-rules">
+            <h2>Come funziona</h2>
+            <ul>
+                <li>Ogni domanda ha un <strong>timer individuale</strong> con countdown</li>
+                <li><strong>+1 punto</strong> per risposta corretta, <strong>-0,25</strong> per risposta errata, <strong>0</strong> se salti</li>
+                <li><strong>Clic sinistro</strong> seleziona la risposta, <strong>clic destro</strong> elimina un'opzione</li>
+                <li>Quando elimini abbastanza opzioni, indovinare diventa vantaggioso</li>
+                <li>Se il timer scade, la domanda viene saltata automaticamente</li>
+            </ul>
+        </div>
+
+        <div class="tt-settings">
+            <div class="tt-setting-group">
+                <label class="tt-setting-label">Numero di domande</label>
+                <div class="tt-setting-options">
+                    <button class="tt-opt-btn" data-setting="numQuestions" data-value="10">10</button>
+                    <button class="tt-opt-btn active" data-setting="numQuestions" data-value="15">15</button>
+                    <button class="tt-opt-btn" data-setting="numQuestions" data-value="20">20</button>
+                </div>
+            </div>
+
+            <div class="tt-setting-group">
+                <label class="tt-setting-label">Tempo per domanda</label>
+                <div class="tt-setting-options">
+                    <button class="tt-opt-btn" data-setting="timeout" data-value="120">2:00</button>
+                    <button class="tt-opt-btn active" data-setting="timeout" data-value="150">2:30</button>
+                    <button class="tt-opt-btn" data-setting="timeout" data-value="180">3:00</button>
+                </div>
+            </div>
+
+            <div class="tt-setting-group">
+                <label class="tt-setting-label">Tipologie di esercizi</label>
+                <div class="tt-type-checkboxes" id="tt-type-checkboxes">
+                    {% for key, ex in exercise_types.items() %}
+                    <label class="tt-type-checkbox">
+                        <input type="checkbox" value="{{ key }}" checked>
+                        <span>{{ ex.icon }} {{ ex.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-start-tt" class="btn btn-primary btn-large">Inizia allenamento</button>
+    </div>
+</section>
+
+<!-- ====== EXERCISE SCREEN ====== -->
+<section id="tt-active" class="tt-active-screen hidden">
+    <div class="tt-topbar">
+        <div class="tt-progress" id="tt-progress">Domanda 1 di 15</div>
+        <div class="tt-score-display" id="tt-score-display">Punteggio: 0,00</div>
+    </div>
+
+    <!-- Per-question timer -->
+    <div class="tt-timer-wrapper">
+        <div class="tt-timer-circle" id="tt-timer-circle">
+            <svg viewBox="0 0 120 120" class="tt-timer-svg">
+                <circle class="tt-timer-track" cx="60" cy="60" r="52" />
+                <circle class="tt-timer-indicator" id="tt-timer-indicator" cx="60" cy="60" r="52" />
+            </svg>
+            <div class="tt-timer-text" id="tt-timer-text">2:30</div>
+        </div>
+    </div>
+
+    <!-- Question area -->
+    <section id="tt-question-area" class="sim-question-area">
+        <div class="loading">Caricamento...</div>
+    </section>
+
+    <!-- EV hint -->
+    <div class="tt-ev-hint hidden" id="tt-ev-hint"></div>
+
+    <!-- Actions -->
+    <div class="sim-actions">
+        <button id="btn-tt-skip" class="btn btn-ghost btn-large">Salta</button>
+        <button id="btn-tt-answer" class="btn btn-primary btn-large" disabled>Rispondi</button>
+    </div>
+
+    <p class="tt-hint-text">Clic destro o tocco lungo su un'opzione per eliminarla</p>
+</section>
+
+<!-- ====== RESULTS SCREEN ====== -->
+<section id="tt-results" class="sim-results-screen hidden">
+    <div class="sim-results-header">
+        <h1>Risultati Allenamento Tempo</h1>
+        <p id="tt-results-subtitle"></p>
+    </div>
+
+    <div class="sim-results-grid">
+        <div class="sim-score-card" id="tt-score-card">
+            <div class="sim-score-value" id="tt-score-value">0</div>
+            <div class="sim-score-label">Punteggio TOLC</div>
+        </div>
+
+        <div class="sim-stats-row" id="tt-stats-row">
+            <div class="sim-stat-card sim-stat-correct">
+                <span class="sim-stat-number" id="tt-stat-correct">0</span>
+                <span class="sim-stat-label">Corrette</span>
+            </div>
+            <div class="sim-stat-card sim-stat-wrong">
+                <span class="sim-stat-number" id="tt-stat-wrong">0</span>
+                <span class="sim-stat-label">Errate</span>
+            </div>
+            <div class="sim-stat-card sim-stat-skipped">
+                <span class="sim-stat-number" id="tt-stat-skipped">0</span>
+                <span class="sim-stat-label">Saltate</span>
+            </div>
+            <div class="sim-stat-card sim-stat-time">
+                <span class="sim-stat-number" id="tt-stat-avgtime">0s</span>
+                <span class="sim-stat-label">Tempo medio</span>
+            </div>
+        </div>
+
+        <!-- Additional time stats -->
+        <div class="tt-time-stats" id="tt-time-stats">
+            <div class="tt-time-stat">
+                <span class="tt-time-stat-value" id="tt-avg-correct-time">--</span>
+                <span class="tt-time-stat-label">Tempo medio risposte corrette</span>
+            </div>
+            <div class="tt-time-stat">
+                <span class="tt-time-stat-value" id="tt-avg-wrong-time">--</span>
+                <span class="tt-time-stat-label">Tempo medio risposte errate</span>
+            </div>
+            <div class="tt-time-stat">
+                <span class="tt-time-stat-value" id="tt-wasted-time">--</span>
+                <span class="tt-time-stat-label">Tempo sprecato su risposte errate</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scatter plot -->
+    <div class="tt-scatter-section">
+        <h2>Distribuzione tempi</h2>
+        <div class="tt-scatter-plot" id="tt-scatter-plot">
+            <div class="tt-scatter-y-axis">
+                <span class="tt-scatter-y-label" id="tt-scatter-y-max"></span>
+                <span class="tt-scatter-y-label" id="tt-scatter-y-mid"></span>
+                <span class="tt-scatter-y-label">0s</span>
+            </div>
+            <div class="tt-scatter-area" id="tt-scatter-area"></div>
+        </div>
+        <div class="tt-scatter-legend">
+            <span class="tt-legend-item"><span class="tt-scatter-dot correct"></span> Corretta</span>
+            <span class="tt-legend-item"><span class="tt-scatter-dot wrong"></span> Errata</span>
+            <span class="tt-legend-item"><span class="tt-scatter-dot skip"></span> Saltata</span>
+        </div>
+    </div>
+
+    <!-- Per-question breakdown -->
+    <div class="sim-breakdown">
+        <h2>Dettaglio per domanda</h2>
+        <div class="sim-table-wrapper">
+            <table class="sim-breakdown-table" id="tt-breakdown-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tempo</th>
+                        <th>Risultato</th>
+                        <th>Difficolta</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody id="tt-breakdown-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Strategy feedback -->
+    <div class="tt-strategy-feedback" id="tt-strategy-feedback">
+        <h2>Consigli strategici</h2>
+        <ul id="tt-strategy-list"></ul>
+    </div>
+
+    <div class="sim-results-actions">
+        <a href="/" class="btn btn-primary btn-large">Torna alla Dashboard</a>
+        <button id="btn-retry-tt" class="btn btn-secondary btn-large">Ripeti allenamento</button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.EXERCISE_TYPES = {{ exercise_types | default({}) | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/time_training.js') }}"></script>
+{% endblock %}

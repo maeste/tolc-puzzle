@@ -42,9 +42,9 @@ class TestRealisticExamWeightsConfig:
                 f"Count for '{ex_type}' should be positive, got {count}"
             )
 
-    def test_estimation_excluded(self):
-        assert "estimation" not in REALISTIC_EXAM_WEIGHTS, (
-            "estimation type should be excluded"
+    def test_estimation_included(self):
+        assert "estimation" in REALISTIC_EXAM_WEIGHTS, (
+            "estimation type should be included (Aritmetica/Numeri category)"
         )
 
     def test_graph_included(self):
@@ -82,9 +82,9 @@ class TestRealisticExamWeightsConfig:
         assert "number_sense" in REALISTIC_EXAM_WEIGHTS
         assert "which_satisfies" in REALISTIC_EXAM_WEIGHTS
 
-    def test_estimation_and_learning_types_excluded(self):
-        """All excluded types must not appear in exam weights."""
-        excluded = ["estimation", "trap", "always_true", "proportional", "cross_topic"]
+    def test_learning_only_types_excluded(self):
+        """Learning-only types must not appear in exam weights."""
+        excluded = ["trap", "always_true", "proportional", "cross_topic"]
         for ex_type in excluded:
             assert ex_type not in REALISTIC_EXAM_WEIGHTS, (
                 f"'{ex_type}' should not be in REALISTIC_EXAM_WEIGHTS"

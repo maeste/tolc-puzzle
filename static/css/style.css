@@ -652,6 +652,46 @@ main {
     color: #92400e;
 }
 
+.sim-nav-btn.sim-nav-locked {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Forward-only mode toggle */
+.sim-mode-toggle {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.sim-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.sim-toggle-label input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.sim-forward-warning {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius);
+    color: #92400e;
+    font-size: 0.9rem;
+}
+
 /* Question area in simulation */
 .sim-question-area {
     background: var(--bg-card);
@@ -1078,4 +1118,328 @@ footer {
     .exam-option-letter { width: 1.75rem; height: 1.75rem; min-width: 1.75rem; font-size: 0.8rem; }
     .simulation-cta { flex-direction: column; align-items: center; }
     .simulation-cta .btn { width: 100%; }
+}
+
+/* === Accent button (for dashboard CTA) === */
+.btn-accent {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+}
+.btn-accent:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+/* === Time Training Mode === */
+
+/* Settings */
+.tt-settings {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+.tt-setting-group {
+    margin-bottom: 1.25rem;
+}
+.tt-setting-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+.tt-setting-options {
+    display: flex;
+    gap: 0.5rem;
+}
+.tt-opt-btn {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s;
+}
+.tt-opt-btn.active {
+    border-color: var(--primary);
+    background: #eef2ff;
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+.tt-opt-btn:hover {
+    border-color: var(--primary-light);
+}
+.tt-type-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem;
+}
+.tt-type-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    transition: background 0.1s;
+}
+.tt-type-checkbox:hover {
+    background: var(--bg);
+}
+.tt-type-checkbox input {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Active screen */
+.tt-active-screen { }
+
+.tt-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.tt-progress {
+    font-size: 0.95rem;
+    color: var(--text-light);
+}
+.tt-score-display {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Circular timer */
+.tt-timer-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+.tt-timer-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+.tt-timer-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+.tt-timer-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 8;
+}
+.tt-timer-indicator {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke 0.3s;
+}
+.tt-timer-green .tt-timer-indicator { stroke: var(--success); }
+.tt-timer-yellow .tt-timer-indicator { stroke: var(--warning); }
+.tt-timer-red .tt-timer-indicator {
+    stroke: var(--danger);
+    animation: timer-pulse 0.8s ease-in-out infinite;
+}
+.tt-timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+}
+.tt-timer-green .tt-timer-text { color: var(--success); }
+.tt-timer-yellow .tt-timer-text { color: var(--warning); }
+.tt-timer-red .tt-timer-text { color: var(--danger); }
+
+/* Option elimination */
+.tt-option-eliminated {
+    opacity: 0.4;
+    text-decoration: line-through;
+    border-style: dashed !important;
+    cursor: pointer;
+}
+.tt-option-eliminated .exam-option-letter {
+    background: var(--border);
+    color: var(--text-light);
+}
+
+/* EV hint */
+.tt-ev-hint {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border: 1px solid var(--success);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #065f46;
+    text-align: center;
+}
+
+.tt-hint-text {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.75rem;
+}
+
+/* Time stats in results */
+.tt-time-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+.tt-time-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+}
+.tt-time-stat-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+.tt-time-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* Scatter plot */
+.tt-scatter-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.tt-scatter-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+.tt-scatter-plot {
+    display: flex;
+    gap: 0.5rem;
+    height: 200px;
+}
+.tt-scatter-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-right: 0.5rem;
+    min-width: 3rem;
+}
+.tt-scatter-y-label {
+    font-size: 0.7rem;
+    color: var(--text-light);
+}
+.tt-scatter-area {
+    flex: 1;
+    position: relative;
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 49px,
+            var(--border) 49px,
+            var(--border) 50px
+        );
+}
+.tt-scatter-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: translate(-50%, 50%);
+    cursor: default;
+    transition: transform 0.15s;
+}
+.tt-scatter-dot:hover {
+    transform: translate(-50%, 50%) scale(1.5);
+    z-index: 1;
+}
+.tt-scatter-dot.correct { background: var(--success); }
+.tt-scatter-dot.wrong { background: var(--danger); }
+.tt-scatter-dot.skip { background: #9ca3af; }
+
+.tt-scatter-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+.tt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.tt-scatter-legend .tt-scatter-dot {
+    position: static;
+    width: 10px;
+    height: 10px;
+    transform: none;
+    display: inline-block;
+}
+.tt-scatter-legend .tt-scatter-dot:hover {
+    transform: none;
+}
+
+/* Feedback cell in breakdown table */
+.tt-feedback-cell {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* Strategy feedback */
+.tt-strategy-feedback {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+.tt-strategy-feedback h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+.tt-strategy-feedback ul {
+    list-style: none;
+    padding: 0;
+}
+.tt-strategy-feedback li {
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-left: 3px solid var(--warning);
+}
+
+/* Time training responsive */
+@media (max-width: 600px) {
+    .tt-timer-circle { width: 90px; height: 90px; }
+    .tt-timer-text { font-size: 1.1rem; }
+    .tt-time-stats { grid-template-columns: 1fr; }
+    .tt-scatter-plot { height: 150px; }
+    .tt-type-checkboxes { grid-template-columns: 1fr; }
+    .tt-setting-options { flex-wrap: wrap; }
 }

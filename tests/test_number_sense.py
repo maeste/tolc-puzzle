@@ -372,6 +372,7 @@ class TestItalianText:
             "totale", "minuti", "converti", "frazione", "potenza",
             "base", "notazione", "attenzione", "risposta", "primo",
             "usando", "originale", "aumento", "sconto", "uguale",
+            "numero", "resto", "diviso", "verifica", "forma",
         ]
         assert any(word in explanation for word in italian_words), (
             f"No Italian words found in explanation: {explanation}"
