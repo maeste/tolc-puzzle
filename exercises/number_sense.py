@@ -18,6 +18,8 @@ class NumberSense(Exercise):
                 self._power_small_decimal,
                 self._fraction_of_quantity,
                 self._division_remainder_basic,
+                self._sequence_arithmetic_nth_term,
+                self._sequence_geometric_nth_term,
             ]
         elif difficulty == 2:
             templates = [
@@ -27,6 +29,9 @@ class NumberSense(Exercise):
                 self._scientific_notation_order,
                 self._division_remainder_find_number,
                 self._division_remainder_properties,
+                self._sequence_arithmetic_sum,
+                self._sequence_geometric_sum,
+                self._sequence_find_ratio_or_difference,
             ]
         else:
             templates = [
@@ -35,6 +40,8 @@ class NumberSense(Exercise):
                 self._estimation_product,
                 self._percentage_reverse,
                 self._division_remainder_word_problem,
+                self._sequence_geometric_convergence,
+                self._sequence_mixed_problem,
             ]
 
         template_fn = random.choice(templates)
@@ -1024,6 +1031,434 @@ class NumberSense(Exercise):
             "Nei problemi di divisione con resto nella vita reale, il resto "
             "indica gli elementi che non riempiono completamente un gruppo. "
             "Se servono gruppi per tutti, bisogna arrotondare per eccesso il quoziente."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    # ================================================================
+    #  Arithmetic & Geometric Sequences (7 templates across L1, L2, L3)
+    # ================================================================
+
+    # --- L1 ---
+
+    def _sequence_arithmetic_nth_term(self) -> dict:
+        """L1 — Find the n-th term of an arithmetic sequence."""
+        a1 = random.randint(2, 20)
+        d = random.randint(2, 8)
+        n = random.randint(5, 15)
+
+        correct_val = a1 + (n - 1) * d
+        correct = str(correct_val)
+
+        # Distractors
+        distractors = [
+            str(a1 + n * d),           # off-by-one: using n instead of n-1
+            str(a1 * d),               # a1 * d
+            str(a1 + (n - 2) * d),     # off-by-one low
+            str(a1 * n + d),           # wrong formula
+            str((n - 1) * d),          # forgot a1
+        ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = (
+            f"In una progressione aritmetica con primo termine a₁ = {a1} "
+            f"e ragione d = {d}, qual è il {n}-esimo termine?"
+        )
+        explanation = (
+            f"La formula del termine n-esimo è aₙ = a₁ + (n−1)·d. "
+            f"Quindi a_{n} = {a1} + ({n}−1)·{d} = {a1} + {(n - 1) * d} = {correct_val}."
+        )
+        did_you_know = (
+            "In una progressione aritmetica ogni termine si ottiene sommando "
+            "la ragione d al termine precedente. La formula generale è "
+            "aₙ = a₁ + (n−1)·d."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _sequence_geometric_nth_term(self) -> dict:
+        """L1 — Find the n-th term of a geometric sequence."""
+        a1 = random.randint(2, 5)
+        r = random.randint(2, 4)
+        n = random.randint(4, 7)
+
+        correct_val = a1 * r ** (n - 1)
+        correct = str(correct_val)
+
+        # Distractors
+        distractors = [
+            str(a1 * r ** n),              # off-by-one: r^n instead of r^(n-1)
+            str(a1 * r ** (n - 2)),        # off-by-one low
+            str(a1 * (r + 1) ** (n - 1)),  # wrong ratio
+            str(a1 * n * r),              # linear approximation
+            str(r ** (n - 1)),            # forgot a1
+        ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = (
+            f"In una progressione geometrica con primo termine a₁ = {a1} "
+            f"e ragione r = {r}, qual è il {n}-esimo termine?"
+        )
+        explanation = (
+            f"La formula del termine n-esimo è aₙ = a₁ · r^(n−1). "
+            f"Quindi a_{n} = {a1} · {r}^({n}−1) = {a1} · {r ** (n - 1)} = {correct_val}."
+        )
+        did_you_know = (
+            "In una progressione geometrica ogni termine si ottiene moltiplicando "
+            "il precedente per la ragione r. La formula generale è "
+            "aₙ = a₁ · r^(n−1). Attenzione: l'esponente è n−1, non n!"
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    # --- L2 ---
+
+    def _sequence_arithmetic_sum(self) -> dict:
+        """L2 — Sum of first n terms of an arithmetic sequence (word problem)."""
+        a1 = random.randint(1, 10)
+        d = random.randint(1, 5)
+        n = random.randint(5, 12)
+
+        a_n = a1 + (n - 1) * d
+        s_n = n * (2 * a1 + (n - 1) * d) // 2
+        correct = str(s_n)
+
+        # Distractors
+        distractors = [
+            str(n * a1),                                   # forgetting d
+            str((n - 1) * (2 * a1 + (n - 1) * d) // 2),  # off-by-one on n
+            str(a_n * n),                                  # wrong: last term * n
+            str(a1 + a_n),                                 # forgetting n/2
+            str(n * (a1 + a_n)),                           # forgetting /2
+        ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = (
+            f"Uno studente risparmia {a1}€ il primo mese, e ogni mese successivo "
+            f"risparmia {d}€ in più. Quanto ha risparmiato in totale dopo {n} mesi?"
+        )
+        explanation = (
+            f"È una progressione aritmetica con a₁ = {a1}, d = {d}, n = {n}. "
+            f"L'ultimo termine è a_{n} = {a1} + ({n}−1)·{d} = {a_n}. "
+            f"La somma è Sₙ = n·(a₁ + aₙ)/2 = {n}·({a1} + {a_n})/2 = {s_n}€."
+        )
+        did_you_know = (
+            "La somma dei primi n termini di una progressione aritmetica è "
+            "Sₙ = n·(a₁ + aₙ)/2 = n·(2a₁ + (n−1)d)/2. "
+            "Gauss scoprì questa formula da bambino sommando i numeri da 1 a 100!"
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _sequence_geometric_sum(self) -> dict:
+        """L2 — Sum of first n terms of a geometric sequence (word problem)."""
+        a1 = random.randint(1, 5)
+        r = random.choice([2, 3])
+        n = random.randint(4, 7)
+
+        s_n = a1 * (r ** n - 1) // (r - 1)
+        last_term = a1 * r ** (n - 1)
+        correct = str(s_n)
+
+        # Distractors
+        distractors = [
+            str(a1 * r ** n),                              # just last term * r (overshoot)
+            str(a1 * (r ** (n - 1) - 1) // (r - 1)),     # off-by-one on n
+            str(a1 * r * n),                               # linear approximation
+            str(a1 * (r ** n + 1) // (r + 1)),            # wrong formula
+            str(last_term),                                # just the last term
+        ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        verb = "raddoppia" if r == 2 else "triplica"
+        question = (
+            f"Una popolazione di batteri {verb} ogni ora. Inizialmente sono {a1}. "
+            f"Quanti batteri ci sono in totale (somma cumulativa) dopo {n} ore?"
+        )
+        explanation = (
+            f"È una progressione geometrica con a₁ = {a1}, r = {r}, n = {n}. "
+            f"La somma è Sₙ = a₁·(rⁿ − 1)/(r − 1) = "
+            f"{a1}·({r}^{n} − 1)/({r} − 1) = "
+            f"{a1}·{r ** n - 1}/{r - 1} = {s_n}."
+        )
+        did_you_know = (
+            "La somma di una progressione geometrica è Sₙ = a₁·(rⁿ − 1)/(r − 1). "
+            "La crescita geometrica è sorprendentemente rapida: "
+            "raddoppiando ogni giorno, un centesimo diventa oltre 10 milioni in 30 giorni!"
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _sequence_find_ratio_or_difference(self) -> dict:
+        """L2 — Find common difference or ratio given two terms."""
+        variant = random.choice(["arithmetic", "geometric"])
+
+        if variant == "arithmetic":
+            d = random.randint(2, 8)
+            a1 = random.randint(1, 20)
+            n1 = random.randint(2, 5)
+            n2 = n1 + random.randint(2, 6)
+            v1 = a1 + (n1 - 1) * d
+            v2 = a1 + (n2 - 1) * d
+
+            correct = str(d)
+
+            # Distractors
+            distractors = [
+                str(v2 - v1),                # forgot to divide by gap
+                str(abs(v2 // v1)) if v1 != 0 else "1",  # confused with ratio
+                str(d + 1),                  # off-by-one
+                str(d - 1) if d > 1 else "0",  # off-by-one
+                str((v2 - v1) // (n2 - n1 + 1)),  # wrong gap
+            ]
+
+            options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+            question = (
+                f"In una progressione aritmetica, il {n1}-esimo termine è {v1} "
+                f"e il {n2}-esimo termine è {v2}. Trova la ragione d."
+            )
+            explanation = (
+                f"La differenza tra il {n2}-esimo e il {n1}-esimo termine è "
+                f"{v2} − {v1} = {v2 - v1}. Il numero di passi è {n2} − {n1} = {n2 - n1}. "
+                f"Quindi d = {v2 - v1}/{n2 - n1} = {d}."
+            )
+            did_you_know = (
+                "Per trovare la ragione di una progressione aritmetica dati due termini, "
+                "basta dividere la differenza dei valori per la differenza degli indici: "
+                "d = (aₘ − aₙ)/(m − n)."
+            )
+        else:
+            # Geometric: pick r and terms so that the ratio is integer
+            r = random.randint(2, 4)
+            a1 = random.randint(1, 5)
+            n1 = 2
+            n2 = n1 + random.choice([2, 3])
+            v1 = a1 * r ** (n1 - 1)
+            v2 = a1 * r ** (n2 - 1)
+            gap = n2 - n1
+
+            correct = str(r)
+
+            # Distractors
+            distractors = [
+                str(v2 // v1) if v1 != 0 else "1",  # forgot to take root
+                str(v2 - v1),                          # confused with difference
+                str(r + 1),                            # off-by-one
+                str(r - 1) if r > 1 else "1",         # off-by-one
+                str(r * r),                            # squared ratio
+            ]
+
+            options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+            question = (
+                f"In una progressione geometrica, il {n1}-esimo termine è {v1} "
+                f"e il {n2}-esimo termine è {v2}. Trova la ragione r."
+            )
+            explanation = (
+                f"Il rapporto tra il {n2}-esimo e il {n1}-esimo termine è "
+                f"{v2}/{v1} = {v2 // v1}. Il numero di passi è {n2} − {n1} = {gap}. "
+                f"Quindi r^{gap} = {v2 // v1}, da cui r = {r}."
+            )
+            did_you_know = (
+                "Per trovare la ragione di una progressione geometrica dati due termini, "
+                "calcola il rapporto dei valori e poi estrai la radice appropriata: "
+                "r = (aₘ/aₙ)^(1/(m−n))."
+            )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    # --- L3 ---
+
+    def _sequence_geometric_convergence(self) -> dict:
+        """L3 — Sum of infinite geometric series with |r| < 1."""
+        # Use fractions to avoid floating point issues
+        ratio_choices = [
+            (1, 2, "1/2", "50%"),
+            (1, 3, "1/3", "33%"),
+            (2, 3, "2/3", "67%"),
+            (1, 4, "1/4", "25%"),
+            (3, 4, "3/4", "75%"),
+        ]
+        r_num, r_den, r_str, r_percent = random.choice(ratio_choices)
+        a1 = random.randint(1, 10)
+
+        # S_inf = a1 / (1 - r) = a1 / ((r_den - r_num) / r_den) = a1 * r_den / (r_den - r_num)
+        numerator = a1 * r_den
+        denominator = r_den - r_num
+
+        if numerator % denominator == 0:
+            correct_val = numerator // denominator
+            correct = str(correct_val)
+        else:
+            f = Fraction(numerator, denominator)
+            correct = f"{f.numerator}/{f.denominator}"
+
+        # Distractors
+        # a1/(1+r) instead of a1/(1-r)
+        d1_num = a1 * r_den
+        d1_den = r_den + r_num
+        if d1_num % d1_den == 0:
+            d1 = str(d1_num // d1_den)
+        else:
+            f1 = Fraction(d1_num, d1_den)
+            d1 = f"{f1.numerator}/{f1.denominator}"
+
+        # a1/r
+        if a1 % r_num == 0 and r_den == 1:
+            d2 = str(a1 * r_den // r_num)
+        else:
+            f2 = Fraction(a1 * r_den, r_num)
+            d2 = f"{f2.numerator}/{f2.denominator}" if f2.denominator != 1 else str(f2.numerator)
+
+        # a1*(1-r) = a1 * (r_den - r_num) / r_den
+        d3_num = a1 * (r_den - r_num)
+        d3_den = r_den
+        if d3_num % d3_den == 0:
+            d3 = str(d3_num // d3_den)
+        else:
+            f3 = Fraction(d3_num, d3_den)
+            d3 = f"{f3.numerator}/{f3.denominator}"
+
+        d4 = "la serie diverge"
+
+        distractors = [d1, d2, d3, d4, str(a1)]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        question = (
+            f"Calcola la somma della serie geometrica infinita con "
+            f"a₁ = {a1} e r = {r_str}."
+        )
+        explanation = (
+            f"Per una serie geometrica con |r| < 1, la somma è S∞ = a₁/(1−r). "
+            f"Qui S∞ = {a1}/(1 − {r_str}) = {a1}/{denominator}/{r_den} = "
+            f"{a1} · {r_den}/{denominator} = {correct}."
+        )
+        did_you_know = (
+            "Una serie geometrica converge (ha somma finita) solo se |r| < 1. "
+            "La formula S∞ = a₁/(1−r) è usata in finanza per calcolare "
+            "il valore attuale di rendite perpetue."
+        )
+
+        return {
+            "question": question,
+            "options": options,
+            "correct_index": correct_index,
+            "explanation": explanation,
+            "did_you_know": did_you_know,
+        }
+
+    def _sequence_mixed_problem(self) -> dict:
+        """L3 — Identify sequence type and find the next term."""
+        variant = random.choice(["arithmetic", "geometric"])
+
+        if variant == "arithmetic":
+            a1 = random.randint(1, 20)
+            d = random.randint(2, 8)
+            terms = [a1 + i * d for i in range(4)]
+            next_term = a1 + 4 * d
+
+            # What if it were geometric? Fake next term
+            if terms[1] != 0 and terms[0] != 0:
+                fake_ratio = terms[1] / terms[0]
+                geometric_next = int(round(terms[3] * fake_ratio))
+            else:
+                geometric_next = next_term + d
+
+            correct = str(next_term)
+            distractors = [
+                str(geometric_next),       # if mistaken for geometric
+                str(next_term + 1),        # off-by-one
+                str(next_term - 1),        # off-by-one
+                str(next_term + d),        # skipped one term
+                str(terms[3]),             # repeated last
+            ]
+        else:
+            a1 = random.randint(2, 5)
+            r = random.randint(2, 3)
+            terms = [a1 * r ** i for i in range(4)]
+            next_term = a1 * r ** 4
+
+            # What if it were arithmetic? Fake next term
+            fake_d = terms[1] - terms[0]
+            arithmetic_next = terms[3] + fake_d
+
+            correct = str(next_term)
+            distractors = [
+                str(arithmetic_next),      # if mistaken for arithmetic
+                str(next_term * r),        # one too far
+                str(terms[3] + terms[2]),  # addition instead of multiplication
+                str(next_term + 1),        # off-by-one
+                str(a1 * r ** 3),          # repeated last
+            ]
+
+        options, correct_index = self._make_numeric_distractors(correct, distractors)
+
+        t_str = ", ".join(str(t) for t in terms)
+        question = (
+            f"Data la successione {t_str}, qual è il termine successivo?"
+        )
+
+        if variant == "arithmetic":
+            explanation = (
+                f"La differenza tra termini consecutivi è costante: "
+                f"{terms[1]} − {terms[0]} = {d}. "
+                f"È una progressione aritmetica con d = {d}. "
+                f"Il termine successivo è {terms[3]} + {d} = {next_term}."
+            )
+        else:
+            explanation = (
+                f"Il rapporto tra termini consecutivi è costante: "
+                f"{terms[1]}/{terms[0]} = {r}. "
+                f"È una progressione geometrica con r = {r}. "
+                f"Il termine successivo è {terms[3]} · {r} = {next_term}."
+            )
+
+        did_you_know = (
+            "Per riconoscere il tipo di successione: se la differenza tra termini "
+            "consecutivi è costante, è aritmetica; se il rapporto è costante, "
+            "è geometrica. Controlla sempre entrambe le possibilità!"
         )
 
         return {

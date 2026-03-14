@@ -2244,6 +2244,156 @@ def _t3_trig_real_world():
     return question, correct_value, svg, explanation, tip
 
 
+# ============ ADVANCED TRIGONOMETRIC IDENTITIES ============
+
+def _t2_trig_double_angle_sin():
+    """Given sin(x) = p/q and a quadrant, find sin(2x) using the double-angle formula."""
+    # Pythagorean triples: (opp, adj, hyp)
+    triples = [(3, 4, 5), (5, 12, 13), (8, 15, 17), (7, 24, 25)]
+    opp, adj, hyp = random.choice(triples)
+    sin_x = opp / hyp
+    cos_x_abs = adj / hyp
+
+    quadrant = random.choice([1, 2])
+    if quadrant == 1:
+        cos_x = cos_x_abs
+        quadrant_desc = "x è nel primo quadrante (0 < x < π/2)"
+    else:
+        cos_x = -cos_x_abs
+        quadrant_desc = "x è nel secondo quadrante (π/2 < x < π)"
+
+    correct_value = 2 * sin_x * cos_x
+
+    question = (
+        f"Se sin(x) = {opp}/{hyp} e {quadrant_desc}, quanto vale sin(2x)?"
+    )
+    explanation = (
+        f"cos²(x) = 1 - sin²(x) = 1 - ({opp}/{hyp})² = {adj**2}/{hyp**2}, "
+        f"quindi cos(x) = {'+' if cos_x > 0 else '-'}{adj}/{hyp}. "
+        f"sin(2x) = 2·sin(x)·cos(x) = 2·({opp}/{hyp})·({_fmt(cos_x)}) = {_fmt(correct_value)}."
+    )
+    tip = "Ricorda: sin(2x) = 2·sin(x)·cos(x). Il segno di cos(x) dipende dal quadrante."
+    return question, correct_value, "", explanation, tip
+
+
+def _t2_trig_double_angle_cos():
+    """Given cos(x) = p/q and a quadrant, find cos(2x) using the double-angle formula."""
+    triples = [(3, 4, 5), (5, 12, 13), (8, 15, 17), (7, 24, 25)]
+    opp, adj, hyp = random.choice(triples)
+    cos_x = adj / hyp
+
+    quadrant = random.choice([1, 4])
+    if quadrant == 1:
+        quadrant_desc = "x è nel primo quadrante (0 < x < π/2)"
+    else:
+        quadrant_desc = "x è nel quarto quadrante (3π/2 < x < 2π)"
+
+    # cos(2x) = 2cos²(x) - 1
+    correct_value = 2 * cos_x * cos_x - 1
+
+    question = (
+        f"Se cos(x) = {adj}/{hyp} e {quadrant_desc}, quanto vale cos(2x)?"
+    )
+    explanation = (
+        f"cos(2x) = 2·cos²(x) - 1 = 2·({adj}/{hyp})² - 1 "
+        f"= 2·{adj**2}/{hyp**2} - 1 = {_fmt(correct_value)}."
+    )
+    tip = "Ricorda: cos(2x) = 2cos²(x) - 1. Questa formula non dipende dal segno di sin(x)."
+    return question, correct_value, "", explanation, tip
+
+
+def _t3_trig_sum_formula():
+    """Compute sin(a±b) or cos(a±b) using sum/difference formulas with notable angles."""
+    # Define composite angles as sums/differences of notable angles
+    # (target_label, func, a, b, sign) where target = a + sign*b
+    combos = [
+        ("π/12", "sin", math.pi / 3, math.pi / 4, -1),   # sin(π/3 - π/4)
+        ("π/12", "cos", math.pi / 3, math.pi / 4, -1),   # cos(π/3 - π/4)
+        ("5π/12", "sin", math.pi / 4, math.pi / 6, 1),   # sin(π/4 + π/6)
+        ("5π/12", "cos", math.pi / 4, math.pi / 6, 1),   # cos(π/4 + π/6)
+        ("7π/12", "sin", math.pi / 3, math.pi / 4, 1),   # sin(π/3 + π/4)
+        ("7π/12", "cos", math.pi / 3, math.pi / 4, 1),   # cos(π/3 + π/4)
+        ("π/12", "sin", math.pi / 4, math.pi / 6, -1),   # sin(π/4 - π/6)
+        ("π/12", "cos", math.pi / 4, math.pi / 6, -1),   # cos(π/4 - π/6)
+    ]
+
+    label, func, a, b, sign = random.choice(combos)
+
+    angle_names = {
+        math.pi / 6: "π/6", math.pi / 4: "π/4", math.pi / 3: "π/3",
+    }
+    a_name = angle_names[a]
+    b_name = angle_names[b]
+    sign_str = "+" if sign == 1 else "-"
+
+    if func == "sin":
+        # sin(a±b) = sin(a)cos(b) ± cos(a)sin(b)
+        correct_value = math.sin(a) * math.cos(b) + sign * math.cos(a) * math.sin(b)
+    else:
+        # cos(a±b) = cos(a)cos(b) ∓ sin(a)sin(b)
+        correct_value = math.cos(a) * math.cos(b) - sign * math.sin(a) * math.sin(b)
+
+    question = f"Calcola {func}({label})."
+    decomp = f"{a_name} {sign_str} {b_name}"
+    if func == "sin":
+        formula = (
+            f"sin({decomp}) = sin({a_name})·cos({b_name}) "
+            f"{sign_str} cos({a_name})·sin({b_name})"
+        )
+    else:
+        inv_sign = "-" if sign == 1 else "+"
+        formula = (
+            f"cos({decomp}) = cos({a_name})·cos({b_name}) "
+            f"{inv_sign} sin({a_name})·sin({b_name})"
+        )
+
+    explanation = (
+        f"{label} = {decomp}. Usando la formula di addizione: "
+        f"{formula} = {_fmt(correct_value, 4)}."
+    )
+    tip = (
+        "Formule di addizione: sin(a±b) = sin(a)cos(b) ± cos(a)sin(b); "
+        "cos(a±b) = cos(a)cos(b) ∓ sin(a)sin(b)."
+    )
+    return question, correct_value, "", explanation, tip
+
+
+def _t3_trig_squared_expression():
+    """Compute [sin(a) ± cos(a)]² for a notable angle."""
+    # [sin(a) - cos(a)]² = 1 - sin(2a)
+    # [sin(a) + cos(a)]² = 1 + sin(2a)
+    angles = [
+        ("π/12", math.pi / 12),
+        ("π/8", math.pi / 8),
+        ("π/6", math.pi / 6),
+        ("π/4", math.pi / 4),
+        ("π/3", math.pi / 3),
+        ("π/12", math.pi / 12),
+        ("5π/12", 5 * math.pi / 12),
+    ]
+    angle_label, angle_val = random.choice(angles)
+    operation = random.choice(["+", "-"])
+
+    sin_2a = math.sin(2 * angle_val)
+    if operation == "+":
+        correct_value = 1 + sin_2a
+    else:
+        correct_value = 1 - sin_2a
+
+    question = f"Quanto vale [sin({angle_label}) {operation} cos({angle_label})]²?"
+    explanation = (
+        f"[sin(a) {operation} cos(a)]² = sin²(a) {operation}2·sin(a)·cos(a) + cos²(a) "
+        f"= 1 {operation} sin(2a). "
+        f"Poiché 2a = 2·{angle_label}, sin(2·{angle_label}) = {_fmt(sin_2a, 4)}, "
+        f"il risultato è 1 {operation} {_fmt(sin_2a, 4)} = {_fmt(correct_value, 4)}."
+    )
+    tip = (
+        "Ricorda: [sin(a) ± cos(a)]² = 1 ± sin(2a), "
+        "usando sin²(a) + cos²(a) = 1 e 2sin(a)cos(a) = sin(2a)."
+    )
+    return question, correct_value, "", explanation, tip
+
+
 class GeometrySherlock(Exercise):
     """Sherlock Geometrico -- geometric figures with partial data and progressive clues."""
 
@@ -2280,6 +2430,8 @@ class GeometrySherlock(Exercise):
         _t2_similar_area_ratio,
         _t2_trig_find_ratio,
         _t2_trig_find_side,
+        _t2_trig_double_angle_sin,
+        _t2_trig_double_angle_cos,
     ]
 
     TEMPLATES_L3 = [
@@ -2299,6 +2451,8 @@ class GeometrySherlock(Exercise):
         _t3_similar_real_world,
         _t3_trig_identify_angle,
         _t3_trig_real_world,
+        _t3_trig_sum_formula,
+        _t3_trig_squared_expression,
     ]
 
     # Templates whose answers can be negative or zero, requiring signed distractors
@@ -2310,6 +2464,10 @@ class GeometrySherlock(Exercise):
         _t2_rotation_180_sum,
         _t3_compose_transformations,
         _t3_transformation_vertices,
+        _t2_trig_double_angle_sin,
+        _t2_trig_double_angle_cos,
+        _t3_trig_sum_formula,
+        _t3_trig_squared_expression,
     }
 
     def generate(self, difficulty: int, text_only: bool = False) -> dict:

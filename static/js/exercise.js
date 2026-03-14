@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let answered = false;
     let difficulty = 1;
     let timer = null;
+    let adaptiveApplied = false;
 
     const exerciseArea = document.getElementById("exercise-area");
     const feedbackArea = document.getElementById("feedback-area");
@@ -13,6 +14,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnNext = document.getElementById("btn-next");
     const btnSkip = document.getElementById("btn-skip");
     const timerBar = document.getElementById("timer-bar");
+    const adaptiveIndicator = document.getElementById("adaptive-indicator");
+
+    // Adaptive difficulty: apply on first load only
+    function applyAdaptiveDifficulty() {
+        if (adaptiveApplied) return;
+        adaptiveApplied = true;
+
+        if (!window.SRSAdaptive || !window.SRSTracker) return;
+
+        // Ensure SRSTracker is initialized
+        try { SRSTracker.init(); } catch (e) { /* already initialized */ }
+
+        var recommended = SRSAdaptive.getRecommendedDifficulty(type);
+        if (recommended >= 1 && recommended <= 3) {
+            difficulty = recommended;
+            window._currentDifficulty = difficulty;
+
+            // Update button UI
+            document.querySelectorAll(".diff-btn").forEach(b => {
+                b.classList.toggle("active", parseInt(b.dataset.diff) === difficulty);
+            });
+
+            // Show adaptive indicator
+            if (adaptiveIndicator) {
+                adaptiveIndicator.textContent = "\uD83D\uDCCA Difficolt\u00e0 consigliata";
+                adaptiveIndicator.classList.remove("hidden");
+            }
+        }
+    }
+
+    applyAdaptiveDifficulty();
 
     // Difficulty selector
     document.querySelectorAll(".diff-btn").forEach(btn => {
@@ -20,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             difficulty = parseInt(btn.dataset.diff);
+            // Hide adaptive indicator on manual override
+            if (adaptiveIndicator) adaptiveIndicator.classList.add("hidden");
             loadExercise();
         });
     });
@@ -90,6 +124,9 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCheck.classList.remove("hidden");
         btnNext.classList.add("hidden");
         exerciseArea.innerHTML = '<div class="loading">Caricamento...</div>';
+
+        // Store current difficulty for SRS hooks
+        window._currentDifficulty = difficulty;
 
         try {
             const res = await fetch(`/api/exercise/${type}?difficulty=${difficulty}`);

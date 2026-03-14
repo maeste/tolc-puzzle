@@ -1,3 +1,6 @@
+import json
+import random as _random
+
 from flask import Flask, render_template, jsonify, request
 from exercises.base import Exercise
 
@@ -174,7 +177,6 @@ def api_check():
 @app.route("/api/simulation/exercises")
 def api_simulation_exercises():
     """Generate 20 exercises distributed across 9 types for TOLC-B simulation."""
-    import random as _random
     distribution = [
         "trap", "trap",
         "word",
@@ -223,7 +225,6 @@ def api_realistic_exam_exercises():
     approximating real TOLC-B category frequencies.
     Includes SVG graph questions (graph, geometry types).
     """
-    import random as _random
     # Build the flat distribution list from the weights config
     exam_types = []
     for ex_type, count in REALISTIC_EXAM_WEIGHTS.items():
@@ -260,6 +261,66 @@ def api_realistic_exam_exercises():
             data["correct_index"] = 0
             data["options"], data["correct_index"] = Exercise.shuffle_options(data["options"], 0)
         exercises.append(data)
+    return jsonify(exercises)
+
+
+@app.route("/daily-session")
+def daily_session():
+    return render_template("daily_session.html", exercise_types=EXERCISE_TYPES)
+
+
+@app.route("/api/daily-session/exercises")
+def api_daily_session_exercises():
+    """Generate exercises for a daily SRS session.
+
+    Accepts optional query params:
+    - count: number of exercises (default 15, max 20)
+    - session: JSON array of {type, difficulty} objects from SRSScheduler
+    """
+    count = request.args.get("count", 15, type=int)
+    count = max(1, min(20, count))
+
+    session_raw = request.args.get("session", None)
+    session_items = None
+    if session_raw:
+        try:
+            session_items = json.loads(session_raw)
+            if not isinstance(session_items, list):
+                session_items = None
+        except (json.JSONDecodeError, TypeError):
+            session_items = None
+
+    exercises = []
+
+    if session_items is not None:
+        for item in session_items[:count]:
+            ex_type = item.get("type", "")
+            diff = item.get("difficulty", 2)
+            reason = item.get("reason", "practice")
+
+            if ex_type not in exercise_registry:
+                continue
+
+            diff = max(1, min(3, int(diff)))
+            ex = exercise_registry[ex_type]()
+            data = ex.generate(diff)
+            data["type"] = ex_type
+            data["difficulty"] = diff
+            data["reason"] = reason
+            exercises.append(data)
+    else:
+        # Fallback: random mix
+        available_types = list(exercise_registry.keys())
+        for _ in range(count):
+            ex_type = _random.choice(available_types)
+            diff = _random.randint(1, 3)
+            ex = exercise_registry[ex_type]()
+            data = ex.generate(diff)
+            data["type"] = ex_type
+            data["difficulty"] = diff
+            data["reason"] = "practice"
+            exercises.append(data)
+
     return jsonify(exercises)
 
 

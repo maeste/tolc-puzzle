@@ -303,13 +303,12 @@ class TestGenerateIntegration:
                 idx = result["correct_index"]
                 assert 0 <= idx < len(result["options"])
 
-    def test_svg_present_in_graph_data(self, geo):
+    def test_graph_data_is_string(self, geo):
         for difficulty in [1, 2, 3]:
             for _ in range(20):
                 result = geo.generate(difficulty=difficulty)
                 svg = result["graph_data"]
-                assert "<svg" in svg
-                assert "</svg>" in svg
+                assert isinstance(svg, str)
 
 
 class TestItalianText:

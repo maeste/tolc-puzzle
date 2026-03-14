@@ -7,7 +7,7 @@
 
 ## 1. Panoramica
 
-Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **59 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 8 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v5 (TOLC-50→63): Function Composition (7 template), Geometric Transformations (9 template), Estimation in Exam, Functional Equations from Graphs (7 template), Similar Triangles & Trig (8 template), Parameter Effect on Graphs (8 template), Multiple Representations (10 template), Division with Remainder (4 template), Variable Classification (4 template), Strategy Selection (12 template), Frequency Exercises (5 template), Text-Only Geometry Mode, Forward-Only Navigation. **~210 template** distribuiti su **19 moduli**, **2131 test** automatizzati. Assessment v5 (§11): copertura domande reali 92q al **85.9%** (79/92 coperte pienamente).
+Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezione Matematica del TOLC-B, per un totale di **59 argomenti** (di cui 4 EXTRA non richiesti dal syllabus base + 8 competenze cognitive trasversali). Tutte le lacune identificate sono state risolte. Implementazioni v5 (TOLC-50→63): Function Composition (7 template), Geometric Transformations (9 template), Estimation in Exam, Functional Equations from Graphs (7 template), Similar Triangles & Trig (8 template), Parameter Effect on Graphs (8 template), Multiple Representations (10 template), Division with Remainder (4 template), Variable Classification (4 template), Strategy Selection (12 template), Frequency Exercises (5 template), Text-Only Geometry Mode, Forward-Only Navigation. **~237 template** distribuiti su **19 moduli**, **2598 test** automatizzati. Sistema SRS completo: data model, scheduler FSRS-inspired, reconsolidation, sessione giornaliera, difficoltà adattiva. Tutti i gap v5 (§11.9) risolti: parametriche, successioni, trig avanzata, parabola, equazioni irrazionali. Assessment v5 (§11): copertura domande reali 92q al **85.9%** (79/92 coperte pienamente).
 
 ### Legenda Stati
 
@@ -274,6 +274,16 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | 2026-03-14 | TOLC-62 | Creato modulo `exercises/strategy_selection.py` con classe `StrategySelection`: 12 template scelta strategica. L1: strategia equazioni (4t). L2: strategia semplificazione (4t). L3: approccio geometrico (4t). Registrato in `app.py` come tipo `strategy`. Test: 28 test. | Claude |
 | 2026-03-14 | TOLC-63 | Aggiunti 5 template frequenza assoluta/relativa in `exercises/statistics_exercise.py`: freq. assoluta da dati (L1), da istogramma (L1), relativa/percentuale (L2), confronto frequenze (L2), ricostruzione da tabella frequenza (L3). Test: 18 test. | Claude |
 | 2026-03-14 | TOLC-65 | Assessment v5 (§11): analisi completa 92 domande reali da 6 fonti indipendenti (CISIA, Alpha Test, Ca' Foscari, Ingegneria, Prof. Sanitarie, QuizAmmissione). Copertura piena 85.9% (79/92). Gap residui: equazioni parametriche, successioni, trig avanzata. Realismo simulazione 9.1/10. | Claude |
+| 2026-03-14 | TOLC-46 | Creato modulo SRS Data Model: `static/js/srs_tracker.js` — performance tracking per tipo×difficoltà con stability/difficulty FSRS-inspired, rolling window accuracy, migration da vecchio formato. Test: `tests/test_srs_tracker.py` (43 test). | Claude |
+| 2026-03-14 | TOLC-47 | Creato modulo SRS Scheduler: `static/js/srs_scheduler.js` — scheduling engine con retrievability R(t)=e^(-t/S), `getDueItems()`, `getRecommendedSession(n)` con interleaving, `getSummary()` per dashboard. Test: `tests/test_srs_scheduler.py` (47 test). | Claude |
+| 2026-03-14 | TOLC-48 | Creato modulo SRS Reconsolidation: `static/js/srs_reconsolidation.js` — wrong answer tracking, 3 risposte corrette consecutive per completare riconsolidazione, boost 2x urgenza per item attivi. Integrato in scheduler e app.js. Test: `tests/test_srs_reconsolidation.py` (29 test). | Claude |
+| 2026-03-14 | TOLC-49 | Creata modalità Sessione Giornaliera: route `/daily-session`, API `/api/daily-session/exercises`, template `daily_session.html`, JS `daily_session.js`. Badge dashboard SRS con conteggio esercizi da ripassare. Navigazione in base.html. Test: `tests/test_daily_session.py` (24 test). | Claude |
+| 2026-03-14 | TOLC-44 | Creato modulo `static/js/srs_adaptive.js`: difficoltà adattiva basata su SRS stats (>80% L1→L2, >70% L2→L3, <50% fallback). Mastery levels per tipo (beginner/intermediate/advanced/mastered). Integrato in exercise.js (auto-selezione al primo caricamento, override manuale). Badge mastery su dashboard. Test: `tests/test_srs_adaptive.py` (40 test). | Claude |
+| 2026-03-14 | TOLC-65 | Aggiunti 6 template equazioni parametriche in `exercises/which_satisfies.py`: L1 — equazione lineare impossibile/infinite soluzioni con parametro. L2 — quadratica discriminante negativo/nullo con parametro. L3 — radici positive (Vieta) + sistema incompatibile con parametro. Gap §11.9 risolto. Test: `tests/test_parametric_equations.py` (59 test). | Claude |
+| 2026-03-14 | TOLC-66 | Aggiunti 7 template successioni aritmetiche e geometriche in `exercises/number_sense.py`: L1 — n-esimo termine (aritmetica, geometrica). L2 — somma primi n termini, trovare ragione. L3 — convergenza serie geometrica, problema misto. Contesti italiani (risparmio, batteri, palla). Gap §11.9 risolto. Test: `tests/test_sequences.py` (38 test). | Claude |
+| 2026-03-14 | TOLC-67 | Aggiunti 4 template identità trigonometriche avanzate in `exercises/geometry_sherlock.py`: L2 — sin(2x) e cos(2x) con Pitagora e quadrante. L3 — formule addizione/sottrazione angoli notevoli, [sin(a)±cos(a)]². Gap §11.9 (trig avanzata) risolto. Test: `tests/test_trig_identities.py` (34 test). | Claude |
+| 2026-03-14 | TOLC-68 | Aggiunti 6 template parabola in `exercises/analytic_geometry.py`: L1 — vertice e intersezioni asse x. L2 — equazione da vertice+punto, asse e direzione apertura. L3 — intersezione parabola-retta (Vieta), retta tangente. Support orientamento orizzontale x=ay²+by+c. Gap §11.9 (parabola) risolto. Test: `tests/test_parabola.py` (116 test). | Claude |
+| 2026-03-14 | TOLC-69 | Aggiunti 4 template equazioni irrazionali in `exercises/solve_exercise.py`: L2 — √(ax+b)=c semplice, √(ax+b)=cx+d con verifica dominio. L3 — due radicali, soluzione estranea deliberata. Distrattori includono soluzioni estranee come trappola. Test: `tests/test_radical_equations.py` (37 test). | Claude |
 
 ---
 
@@ -312,7 +322,7 @@ Il TOLC-B Puzzle copre **tutte le 9 macro-aree** del syllabus CISIA per la sezio
 | Macro-aree complete | 4/8 (50%) | 8/8 (100%) | 8/8 (100%) | 9/9 (100%) | 9/9 (100%) | **9/9 (100%)** |
 | Moduli esercizi | 9 | 11 | 11 | 15 | 17 | **19** |
 | Template totali | ~70 | ~80 | 88 | ~138 | ~175 | **~210** |
-| Test automatizzati | — | 171 | 442 | 631 | 2041 | **2131** |
+| Test automatizzati | — | 171 | 442 | 631 | 2041 | **2598** |
 | Simulazione: distribuzione | uniforme | uniforme | pesata TOLC-B | pesata + cognitive | ribilanciata reale (12 tipi) | **13 tipi + estimation** |
 | Simulazione: grafici SVG | no | no | 4/20 | 4/20 | 4/20 | **text-only in esame, SVG in learning** |
 | Simulazione: navigazione | libera | libera | libera | libera | libera | **opzionale forward-only** |
@@ -833,6 +843,6 @@ Le 40 domande SET A e SET B mantengono la stessa copertura di v4 (§10). Nessuna
 **Raccomandazioni post-v5**:
 1. **Successioni aritmetiche/geometriche** (priorità media): aggiungere piccolo modulo per somme, termine n-esimo, ragione. 1-2 template per livello sufficienti.
 2. **Equazioni parametriche** (priorità media): aggiungere template "per quale valore del parametro..." in WhichSatisfies o SolveExercise.
-3. **SRS e difficoltà adattiva** (priorità alta — UX): implementare sistema spaced repetition per ottimizzare l'apprendimento (TOLC-46→49).
+3. ~~**SRS e difficoltà adattiva** (priorità alta — UX)~~: ✅ Data model (`srs_tracker.js`) e scheduling engine (`srs_scheduler.js`) implementati — TOLC-46, TOLC-47. Mancano: UI integration (TOLC-49), Wrong Answer Reconsolidation (TOLC-48), Smart Daily Session (TOLC-50).
 4. **Validazione con studenti reali**: il passo più impattante sarebbe testare con 5-10 studenti TOLC-B.
 5. **Ulteriore sviluppo non giustificato** per copertura syllabus — il ROI è decrescente. Focus dovrebbe spostarsi su UX e personalizzazione.

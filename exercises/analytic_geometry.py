@@ -153,6 +153,65 @@ def _make_circle_distractors(h, k, r, count=3):
     return result[:count]
 
 
+def _fmt_parabola_eq(a, b, c):
+    """Format a vertical parabola equation y = ax^2 + bx + c."""
+    parts = []
+    # ax^2 term
+    if a == 1:
+        parts.append("x²")
+    elif a == -1:
+        parts.append("-x²")
+    else:
+        parts.append(f"{_fmt(a)}x²")
+    # bx term
+    if b != 0:
+        if b > 0:
+            if b == 1:
+                parts.append("+ x")
+            else:
+                parts.append(f"+ {_fmt(b)}x")
+        else:
+            if b == -1:
+                parts.append("- x")
+            else:
+                parts.append(f"- {_fmt(abs(b))}x")
+    # c term
+    if c != 0:
+        if c > 0:
+            parts.append(f"+ {_fmt(c)}")
+        else:
+            parts.append(f"- {_fmt(abs(c))}")
+    return "y = " + " ".join(parts)
+
+
+def _fmt_parabola_eq_horizontal(a, b, c):
+    """Format a horizontal parabola equation x = ay^2 + by + c."""
+    parts = []
+    if a == 1:
+        parts.append("y²")
+    elif a == -1:
+        parts.append("-y²")
+    else:
+        parts.append(f"{_fmt(a)}y²")
+    if b != 0:
+        if b > 0:
+            if b == 1:
+                parts.append("+ y")
+            else:
+                parts.append(f"+ {_fmt(b)}y")
+        else:
+            if b == -1:
+                parts.append("- y")
+            else:
+                parts.append(f"- {_fmt(abs(b))}y")
+    if c != 0:
+        if c > 0:
+            parts.append(f"+ {_fmt(c)}")
+        else:
+            parts.append(f"- {_fmt(abs(c))}")
+    return "x = " + " ".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # LEVEL 1 Templates -- Basic analytic geometry
 # ---------------------------------------------------------------------------
@@ -542,6 +601,296 @@ def _t3_line_circle_intersection():
     return question, result, explanation, tip
 
 
+def _t1_parabola_vertex():
+    """Given y = ax^2 + bx + c, find the vertex."""
+    a = random.choice([i for i in range(-3, 4) if i != 0])
+    h = random.randint(-4, 4)
+    k = random.randint(-5, 5)
+    # From vertex form y = a(x-h)^2 + k => y = ax^2 - 2ahx + ah^2 + k
+    b = -2 * a * h
+    c = a * h * h + k
+
+    # Format the equation
+    eq = _fmt_parabola_eq(a, b, c)
+
+    correct_str = f"({h}, {k})"
+
+    # Distractors: common sign/formula errors
+    dists = set()
+    dists.add(f"({-h}, {k})")
+    dists.add(f"({h}, {-k})")
+    if a != 0:
+        wrong_x = b // (2 * a) if (2 * a) != 0 else h + 1
+        dists.add(f"({wrong_x}, {k})")
+    dists.add(f"({h}, {c})")
+    dists.add(f"({-h}, {-k})")
+    dists.add(f"({b}, {c})")
+    dists.discard(correct_str)
+    distractors = list(dists)[:4]
+    while len(distractors) < 4:
+        distractors.append(f"({h + len(distractors) + 1}, {k - len(distractors)})")
+
+    question = f"Qual è il vertice della parabola {eq}?"
+    explanation = (
+        f"Per la parabola y = ax² + bx + c, il vertice ha coordinate:\n"
+        f"x_V = -b/(2a) = -({b})/(2·{a}) = {h}\n"
+        f"y_V = c - b²/(4a) = {c} - ({b})²/(4·{a}) = {c} - {b * b}/({4 * a}) = {k}\n"
+        f"Vertice V = ({h}, {k})."
+    )
+    tip = (
+        "Il vertice di una parabola y = ax² + bx + c ha coordinate "
+        "V = (-b/(2a), c - b²/(4a))."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t1_parabola_intersections_x():
+    """Find x-axis intersections of y = a(x - r1)(x - r2)."""
+    a = random.choice([i for i in range(-3, 4) if i != 0])
+    r1 = random.randint(-5, 5)
+    r2 = random.randint(-5, 5)
+    while r1 == r2:
+        r2 = random.randint(-5, 5)
+    # Order roots
+    if r1 > r2:
+        r1, r2 = r2, r1
+
+    # Expand: y = a(x^2 - (r1+r2)x + r1*r2) = ax^2 + bx + c
+    b_coeff = -a * (r1 + r2)
+    c_coeff = a * r1 * r2
+    eq = _fmt_parabola_eq(a, b_coeff, c_coeff)
+
+    correct_str = f"({r1}, 0) e ({r2}, 0)"
+
+    dists = set()
+    dists.add(f"({-r1}, 0) e ({-r2}, 0)")
+    xv = (r1 + r2) / 2
+    if abs(xv - round(xv)) < 1e-9:
+        dists.add(f"({int(round(xv))}, 0)")
+    dists.add(f"({r1}, 0)")
+    dists.add(f"(0, {c_coeff})")
+    dists.add(f"({-r2}, 0) e ({-r1}, 0)")
+    dists.add(f"({r1 + 1}, 0) e ({r2 - 1}, 0)")
+    dists.discard(correct_str)
+    distractors = list(dists)[:4]
+    while len(distractors) < 4:
+        distractors.append(f"({r1 - len(distractors)}, 0) e ({r2 + len(distractors)}, 0)")
+
+    question = f"Quali sono le intersezioni con l'asse x della parabola {eq}?"
+    explanation = (
+        f"Poniamo y = 0: {a}(x - {r1})(x - {r2}) = 0\n"
+        f"Le soluzioni sono x = {r1} e x = {r2}.\n"
+        f"Le intersezioni sono ({r1}, 0) e ({r2}, 0)."
+    )
+    tip = (
+        "Per trovare le intersezioni con l'asse x, si pone y = 0 e si risolvono "
+        "le soluzioni dell'equazione di secondo grado."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t2_parabola_equation_from_vertex():
+    """Given vertex and a point, find the parabola equation."""
+    h = random.randint(-4, 4)
+    k = random.randint(-4, 4)
+    # Pick a point (x0, y0) such that a = (y0 - k) / (x0 - h)^2 is integer
+    x0 = h + random.choice([i for i in range(-3, 4) if i != 0])
+    dx_sq = (x0 - h) ** 2
+    a = random.choice([i for i in range(-3, 4) if i != 0])
+    y0 = a * dx_sq + k
+
+    # Build correct equation string in vertex form and expanded form
+    b = -2 * a * h
+    c = a * h * h + k
+    correct_str = _fmt_parabola_eq(a, b, c)
+
+    dists = set()
+    # Wrong sign of a
+    dists.add(_fmt_parabola_eq(-a, 2 * a * h, -a * h * h + k))
+    # Wrong a value
+    for da in [-1, 1, 2]:
+        if a + da != 0:
+            wrong_b = -2 * (a + da) * h
+            wrong_c = (a + da) * h * h + k
+            dists.add(_fmt_parabola_eq(a + da, wrong_b, wrong_c))
+    # Forgot vertex shift
+    dists.add(_fmt_parabola_eq(a, 0, k))
+    dists.discard(correct_str)
+    distractors = list(dists)[:4]
+    while len(distractors) < 4:
+        filler_a = a + len(distractors) + 1
+        distractors.append(_fmt_parabola_eq(filler_a, -2 * filler_a * h, filler_a * h * h + k))
+
+    question = (
+        f"Trova l'equazione della parabola con vertice V({h}, {k}) "
+        f"passante per P({x0}, {y0})."
+    )
+    explanation = (
+        f"Forma del vertice: y = a(x - {h})² + {k}\n"
+        f"Sostituiamo P({x0}, {y0}): {y0} = a({x0} - {h})² + {k}\n"
+        f"{y0} = a·{dx_sq} + {k}\n"
+        f"a = ({y0} - {k}) / {dx_sq} = {y0 - k}/{dx_sq} = {a}\n"
+        f"L'equazione è: {correct_str}."
+    )
+    tip = (
+        "Dalla forma del vertice y = a(x - h)² + k, sostituisci le coordinate "
+        "di un punto noto per trovare il valore di a, poi espandi."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t2_parabola_axis_direction():
+    """Identify axis of symmetry and opening direction of a parabola."""
+    variant = random.choice(["vertical", "horizontal"])
+
+    if variant == "vertical":
+        # y = ax^2 + bx + c
+        a = random.choice([i for i in range(-3, 4) if i != 0])
+        h = random.randint(-4, 4)
+        k = random.randint(-4, 4)
+        b = -2 * a * h
+        c = a * h * h + k
+        eq = _fmt_parabola_eq(a, b, c)
+        direction = "alto" if a > 0 else "basso"
+        correct_str = f"Asse x = {h}, aperta verso l'{direction}"
+        wrong_dir = "basso" if a > 0 else "alto"
+        dists = set()
+        dists.add(f"Asse x = {h}, aperta verso l'{wrong_dir}")
+        dists.add(f"Asse y = {k}, aperta verso destra")
+        dists.add(f"Asse y = {k}, aperta verso sinistra")
+        dists.add(f"Asse x = {-h}, aperta verso l'{direction}")
+        dists.add(f"Asse x = {b}, aperta verso l'{direction}")
+    else:
+        # x = ay^2 + by + c
+        a = random.choice([i for i in range(-3, 4) if i != 0])
+        k = random.randint(-4, 4)
+        h = random.randint(-4, 4)
+        b = -2 * a * k
+        c = a * k * k + h
+        # Format: x = ay² + by + c
+        eq = _fmt_parabola_eq_horizontal(a, b, c)
+        direction = "destra" if a > 0 else "sinistra"
+        correct_str = f"Asse y = {k}, aperta verso {direction}"
+        wrong_dir = "sinistra" if a > 0 else "destra"
+        dists = set()
+        dists.add(f"Asse y = {k}, aperta verso {wrong_dir}")
+        dists.add(f"Asse x = {h}, aperta verso l'alto")
+        dists.add(f"Asse x = {h}, aperta verso il basso")
+        dists.add(f"Asse y = {-k}, aperta verso {direction}")
+        dists.add(f"Asse y = {b}, aperta verso {direction}")
+
+    dists.discard(correct_str)
+    distractors = list(dists)[:4]
+    while len(distractors) < 4:
+        distractors.append(f"Asse x = {h + len(distractors)}, aperta verso l'alto")
+
+    question = (
+        f"Qual è l'asse di simmetria e la direzione di apertura della parabola {eq}?"
+    )
+    explanation = (
+        f"L'equazione è {eq}.\n"
+        f"La risposta corretta è: {correct_str}."
+    )
+    tip = (
+        "Per y = ax² + bx + c l'asse è verticale x = -b/(2a) e si apre verso l'alto (a>0) "
+        "o il basso (a<0). Per x = ay² + by + c l'asse è orizzontale y = -b/(2a) e si apre "
+        "verso destra (a>0) o sinistra (a<0)."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t3_parabola_line_intersection():
+    """Find the sum of x-coordinates of intersection points between parabola and line."""
+    a = random.choice([i for i in range(-3, 4) if i != 0])
+    # Pick integer roots for the resulting quadratic
+    s1 = random.randint(-4, 4)
+    s2 = random.randint(-4, 4)
+    while s1 == s2:
+        s2 = random.randint(-4, 4)
+
+    # The quadratic a*x^2 + (b-m)*x + (c-q) = 0 has roots s1, s2
+    # So (b-m) = -a*(s1+s2) and (c-q) = a*s1*s2
+    # Pick m and derive b, pick q and derive c
+    m = random.randint(-3, 3)
+    b = -a * (s1 + s2) + m
+    q = random.randint(-5, 5)
+    c = a * s1 * s2 + q
+
+    parabola_eq = _fmt_parabola_eq(a, b, c)
+    line_eq = _fmt_eq(m, q)
+
+    sum_x = s1 + s2
+    correct_value = float(sum_x)
+
+    question = (
+        f"Trova la somma delle ascisse dei punti di intersezione tra la parabola "
+        f"{parabola_eq} e la retta {line_eq}."
+    )
+    explanation = (
+        f"Poniamo {a}x² + {b}x + {c} = {m}x + {q}\n"
+        f"{a}x² + ({b}-{m})x + ({c}-{q}) = 0\n"
+        f"{a}x² + {b - m}x + {c - q} = 0\n"
+        f"Per Vieta, la somma delle radici = -{b - m}/{a} = {sum_x}.\n"
+        f"Le radici sono x = {s1} e x = {s2}, somma = {sum_x}."
+    )
+    tip = (
+        "Per trovare le intersezioni tra parabola e retta, metti a sistema le equazioni. "
+        "La somma delle radici si può calcolare con la formula di Vieta: x1 + x2 = -B/A."
+    )
+    return question, correct_value, explanation, tip
+
+
+def _t3_parabola_tangent():
+    """Find the tangent line to y = ax^2 + bx + c at a given x0."""
+    a = random.choice([i for i in range(-3, 4) if i != 0])
+    b = random.randint(-4, 4)
+    c = random.randint(-4, 4)
+    x0 = random.randint(-3, 3)
+
+    # Tangent slope: y' = 2ax0 + b
+    m_tan = 2 * a * x0 + b
+    # y-value at x0
+    y0 = a * x0 * x0 + b * x0 + c
+    # Tangent: y = m_tan * (x - x0) + y0 = m_tan * x + (y0 - m_tan * x0)
+    q_tan = y0 - m_tan * x0
+
+    parabola_eq = _fmt_parabola_eq(a, b, c)
+    correct_str = _fmt_eq(m_tan, q_tan)
+
+    dists = set()
+    # Common error: using ax0 + b instead of 2ax0 + b
+    wrong_m1 = a * x0 + b
+    dists.add(_fmt_eq(wrong_m1, y0 - wrong_m1 * x0))
+    # Wrong intercept
+    dists.add(_fmt_eq(m_tan, q_tan + 1))
+    dists.add(_fmt_eq(m_tan, q_tan - 1))
+    # Secant-like error
+    dists.add(_fmt_eq(m_tan + a, q_tan - a))
+    dists.add(_fmt_eq(-m_tan, -q_tan))
+    dists.discard(correct_str)
+    distractors = list(dists)[:4]
+    while len(distractors) < 4:
+        distractors.append(_fmt_eq(m_tan + len(distractors) + 1, q_tan))
+
+    question = (
+        f"Trova l'equazione della retta tangente alla parabola {parabola_eq} "
+        f"nel punto di ascissa x = {x0}."
+    )
+    explanation = (
+        f"La derivata di y = {a}x² + {b}x + {c} è y' = {2 * a}x + {b}.\n"
+        f"Nel punto x = {x0}: y'({x0}) = {2 * a}·{x0} + {b} = {m_tan}.\n"
+        f"Il punto è ({x0}, {y0}).\n"
+        f"La tangente è: y - {y0} = {m_tan}(x - {x0})\n"
+        f"y = {m_tan}x + {_fmt(q_tan)}\n"
+        f"L'equazione è: {correct_str}."
+    )
+    tip = (
+        "La tangente alla parabola y = ax² + bx + c nel punto x₀ ha pendenza "
+        "m = 2ax₀ + b (derivata). Poi si usa la formula punto-pendenza."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
 def _t3_combined_problem():
     """Given two lines, find their intersection, then compute distance to a given point."""
     # Line 1: y = m1*x + q1
@@ -606,6 +955,8 @@ def _t3_combined_problem():
 # String templates: return (question, correct_str, distractors_list, explanation, tip)
 _STRING_TEMPLATES_L1 = [
     _t1_line_from_point_slope,
+    _t1_parabola_vertex,
+    _t1_parabola_intersections_x,
 ]
 
 # Numeric templates: return (question, correct_value, explanation, tip)
@@ -618,17 +969,21 @@ _STRING_TEMPLATES_L2 = [
     _t2_parallel_perpendicular,
     _t2_line_through_two_points,
     _t2_segment_bisector,
+    _t2_parabola_equation_from_vertex,
+    _t2_parabola_axis_direction,
 ]
 
 _NUMERIC_TEMPLATES_L2 = []
 
 _STRING_TEMPLATES_L3 = [
     _t3_circle_equation,
+    _t3_parabola_tangent,
 ]
 
 _NUMERIC_TEMPLATES_L3 = [
     _t3_line_circle_intersection,
     _t3_combined_problem,
+    _t3_parabola_line_intersection,
 ]
 
 

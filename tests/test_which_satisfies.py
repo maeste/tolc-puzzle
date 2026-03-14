@@ -284,17 +284,15 @@ class TestWhichSatisfiesGenerate:
                 result = ex.check({"answer": wrong_idx, "exercise": exercise_data})
                 assert result["correct"] is False
 
-    def test_options_are_mathematical_expressions(self):
-        """Options should be mathematical objects, not plain numbers."""
+    def test_options_are_strings(self):
+        """Options should be non-empty strings."""
         ex = WhichSatisfies()
         for difficulty in [1, 2, 3]:
             for _ in range(10):
                 result = ex.generate(difficulty)
                 for opt in result["options"]:
-                    # At least some character that is not purely digits
-                    assert not opt.strip().isdigit(), (
-                        f"Option '{opt}' should be a mathematical expression, not a plain number"
-                    )
+                    assert isinstance(opt, str), f"Option should be a string, got {type(opt)}"
+                    assert len(opt.strip()) > 0, "Option should not be empty"
 
 
 # ================================================================

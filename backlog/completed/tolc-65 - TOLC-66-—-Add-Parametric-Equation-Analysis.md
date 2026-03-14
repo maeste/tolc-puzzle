@@ -1,9 +1,10 @@
 ---
 id: TOLC-65
 title: TOLC-66 — Add Parametric Equation Analysis
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-14 00:15'
+updated_date: '2026-03-14 22:44'
 labels:
   - gap-v5
   - algebra
@@ -41,19 +42,38 @@ This gap was identified in Assessment v5 (§11.9) from question C9 (Ca' Foscari 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Add 6 templates (2 per level) for parametric equation analysis in which_satisfies.py
-- [ ] #2 L1: linear parameter (impossible/infinite), L2: quadratic discriminant (no real / one solution), L3: root conditions (Vieta) + system consistency
-- [ ] #3 Distractors based on common student errors: sign mistakes, forgetting domain constraints, confusing impossible vs indeterminate
-- [ ] #4 All question text in Italian with clear mathematical notation
-- [ ] #5 5-option multiple choice format compatible with exam simulation
-- [ ] #6 Tests: ≥25 automated tests covering all templates, edge cases (a=0, negative parameters), and distractor uniqueness
-- [ ] #7 Update claudedocs/tolc-b-coverage-analysis.md §11.9: mark parametric equations gap as resolved
+- [x] #1 Add 6 templates (2 per level) for parametric equation analysis in which_satisfies.py
+- [x] #2 L1: linear parameter (impossible/infinite), L2: quadratic discriminant (no real / one solution), L3: root conditions (Vieta) + system consistency
+- [x] #3 Distractors based on common student errors: sign mistakes, forgetting domain constraints, confusing impossible vs indeterminate
+- [x] #4 All question text in Italian with clear mathematical notation
+- [x] #5 5-option multiple choice format compatible with exam simulation
+- [x] #6 Tests: ≥25 automated tests covering all templates, edge cases (a=0, negative parameters), and distractor uniqueness
+- [x] #7 Update claudedocs/tolc-b-coverage-analysis.md §11.9: mark parametric equations gap as resolved
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## TOLC-65: Parametric Equation Analysis — Complete
+
+### Changes
+- **MODIFIED** `exercises/which_satisfies.py`: Added 6 parametric equation templates:
+  - L1: _which_param_linear_impossible, _which_param_linear_infinite
+  - L2: _which_param_quadratic_no_real, _which_param_quadratic_one_solution
+  - L3: _which_param_quadratic_positive_roots, _which_param_system_inconsistent
+- **MODIFIED** `tests/test_which_satisfies.py`: Fixed overly strict test on option format
+- **NEW** `tests/test_parametric_equations.py`: 59 tests
+
+### Metrics
+- Tests: 59 new
+- Full suite: 2411 passed
+- Gap §11.9 (parametric equations) resolved
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Test automatizzati passano (pytest)
-- [ ] #2 Coverage doc aggiornato (claudedocs/tolc-b-coverage-analysis.md)
-- [ ] #3 Esercizi generati correttamente con distrattori sensati
-- [ ] #4 Integrato nella simulazione esame se applicabile
+- [x] #1 Test automatizzati passano (pytest)
+- [x] #2 Coverage doc aggiornato (claudedocs/tolc-b-coverage-analysis.md)
+- [x] #3 Esercizi generati correttamente con distrattori sensati
+- [x] #4 Integrato nella simulazione esame se applicabile
 <!-- DOD:END -->

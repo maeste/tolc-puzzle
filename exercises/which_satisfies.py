@@ -835,6 +835,473 @@ def _which_always_positive() -> dict:
 
 
 # ================================================================
+#  PARAMETRIC EQUATION ANALYSIS - Level 1
+# ================================================================
+
+def _which_param_linear_impossible() -> dict:
+    """Per quale valore di a l'equazione parametrica lineare e' impossibile?"""
+    # Build (a_coeff * a + b_coeff) x = c
+    # Impossible when a_coeff * a + b_coeff = 0 and c != 0
+    # Keep answer as integer: pick b_coeff divisible by a_coeff
+    a_coeff = random.choice([1, 2, 3, -1, -2, -3])
+    # Pick b_coeff so that a_answer = -b_coeff / a_coeff is integer
+    a_answer = random.choice([i for i in range(-5, 6) if i != 0])
+    b_coeff = -a_coeff * a_answer
+    c_val = random.choice([i for i in range(-9, 10) if i != 0])
+
+    # Format the coefficient of x
+    coeff_str_parts = []
+    if a_coeff == 1:
+        coeff_str_parts.append("a")
+    elif a_coeff == -1:
+        coeff_str_parts.append("-a")
+    else:
+        coeff_str_parts.append(f"{a_coeff}a")
+    if b_coeff > 0:
+        coeff_str_parts.append(f" + {b_coeff}")
+    elif b_coeff < 0:
+        coeff_str_parts.append(f" - {-b_coeff}")
+    coeff_str = "".join(coeff_str_parts)
+
+    equation_str = f"({coeff_str})x = {c_val}"
+
+    # Generate distractors
+    distractors_set = set()
+    # Common errors: sign flip, off-by-one, zero, negation
+    for candidate in [a_answer + 1, a_answer - 1, -a_answer, 0,
+                      a_answer + 2, a_answer - 2, 2 * a_answer]:
+        if candidate != a_answer:
+            distractors_set.add(candidate)
+    distractors = sorted(distractors_set, key=lambda x: abs(x - a_answer))[:4]
+
+    options = [str(a_answer)] + [str(d) for d in distractors]
+
+    question = (
+        f"Per quale valore di a l'equazione {equation_str} e' impossibile?"
+    )
+
+    explanation = (
+        f"L'equazione e' impossibile quando il coefficiente di x si annulla "
+        f"ma il termine noto e' diverso da zero. "
+        f"Il coefficiente di x e' {coeff_str}: ponendo {coeff_str} = 0 si ottiene "
+        f"a = {a_answer}. Per a = {a_answer} l'equazione diventa 0\u00b7x = {c_val}, "
+        f"che e' impossibile perche' 0 \u2260 {c_val}."
+    )
+
+    tip = (
+        "Un'equazione lineare parametrica (f(a))x = c e' impossibile quando "
+        "il coefficiente di x si annulla (f(a) = 0) ma il termine noto c e' diverso da zero. "
+        "Se anche c = 0, l'equazione ha infinite soluzioni (0\u00b7x = 0)."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+def _which_param_linear_infinite() -> dict:
+    """Per quale valore di a l'equazione parametrica lineare ha infinite soluzioni?"""
+    # Build (a_coeff * a + b_coeff) x = d_coeff * a + e_coeff
+    # Infinite solutions when both sides are 0: coeff of x = 0 AND rhs = 0
+    # a_coeff * a + b_coeff = 0 => a = -b_coeff / a_coeff (integer)
+    # d_coeff * a + e_coeff = 0 => must also be 0 at same a value
+    a_coeff = random.choice([1, 2, 3, -1, -2, -3])
+    a_answer = random.choice([i for i in range(-5, 6) if i != 0])
+    b_coeff = -a_coeff * a_answer
+
+    # RHS must also be zero at a = a_answer
+    d_coeff = random.choice([i for i in range(-4, 5) if i != 0])
+    e_coeff = -d_coeff * a_answer
+
+    # Format LHS coefficient
+    lhs_parts = []
+    if a_coeff == 1:
+        lhs_parts.append("a")
+    elif a_coeff == -1:
+        lhs_parts.append("-a")
+    else:
+        lhs_parts.append(f"{a_coeff}a")
+    if b_coeff > 0:
+        lhs_parts.append(f" + {b_coeff}")
+    elif b_coeff < 0:
+        lhs_parts.append(f" - {-b_coeff}")
+    lhs_str = "".join(lhs_parts)
+
+    # Format RHS
+    rhs_parts = []
+    if d_coeff == 1:
+        rhs_parts.append("a")
+    elif d_coeff == -1:
+        rhs_parts.append("-a")
+    else:
+        rhs_parts.append(f"{d_coeff}a")
+    if e_coeff > 0:
+        rhs_parts.append(f" + {e_coeff}")
+    elif e_coeff < 0:
+        rhs_parts.append(f" - {-e_coeff}")
+    rhs_str = "".join(rhs_parts)
+
+    equation_str = f"({lhs_str})x = {rhs_str}"
+
+    # Distractors
+    distractors_set = set()
+    for candidate in [a_answer + 1, a_answer - 1, -a_answer, 0,
+                      a_answer + 2, a_answer - 2]:
+        if candidate != a_answer:
+            distractors_set.add(candidate)
+    distractors = sorted(distractors_set, key=lambda x: abs(x - a_answer))[:4]
+
+    options = [str(a_answer)] + [str(d) for d in distractors]
+
+    question = (
+        f"Per quale valore di a l'equazione {equation_str} ha infinite soluzioni?"
+    )
+
+    explanation = (
+        f"L'equazione ha infinite soluzioni quando si riduce a 0\u00b7x = 0. "
+        f"Il coefficiente di x e' {lhs_str}: ponendo {lhs_str} = 0 si ottiene a = {a_answer}. "
+        f"Il termine destro e' {rhs_str}: per a = {a_answer} vale "
+        f"{d_coeff}\u00b7{a_answer} + {e_coeff} = 0. "
+        f"Quindi per a = {a_answer} l'equazione diventa 0\u00b7x = 0, "
+        f"che e' soddisfatta da ogni x reale."
+    )
+
+    tip = (
+        "Un'equazione parametrica ha infinite soluzioni quando si riduce a 0\u00b7x = 0. "
+        "Bisogna trovare il valore del parametro che annulla simultaneamente "
+        "il coefficiente di x e il termine noto."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+# ================================================================
+#  PARAMETRIC EQUATION ANALYSIS - Level 2
+# ================================================================
+
+def _which_param_quadratic_no_real() -> dict:
+    """Per quale valore di k l'equazione quadratica non ha soluzioni reali?"""
+    # Structure: x^2 + 2kx + (k + c) = 0
+    # Discriminant: 4k^2 - 4(k + c) = 4(k^2 - k - c)
+    # No real solutions when k^2 - k - c < 0
+    # Pick c so the inequality k^2 - k - c < 0 has a nice interval
+    # k^2 - k - c < 0 => roots of k^2 - k - c = 0 are (1 +/- sqrt(1+4c))/2
+    # For c = 2: k^2 - k - 2 < 0 => (k-2)(k+1) < 0 => -1 < k < 2
+    # Correct answer: pick an integer inside the interval
+    c_choices = [
+        # (c, interval_description, correct_k_values, boundary_values)
+        (2, "(-1, 2)", [0, 1], [-1, 2]),
+        (6, "(-2, 3)", [-1, 0, 1, 2], [-2, 3]),
+        (12, "(-3, 4)", [-2, -1, 0, 1, 2, 3], [-3, 4]),
+        (20, "(-4, 5)", [-3, -2, -1, 0, 1, 2, 3, 4], [-4, 5]),
+    ]
+
+    c_val, interval_desc, valid_ks, boundary_ks = random.choice(c_choices)
+    k_answer = random.choice(valid_ks)
+
+    # Distractors: values outside the interval or on boundary
+    distractors_set = set()
+    for bk in boundary_ks:
+        distractors_set.add(bk)
+    # Add values outside interval
+    for candidate in [boundary_ks[0] - 1, boundary_ks[0] - 2,
+                      boundary_ks[1] + 1, boundary_ks[1] + 2]:
+        distractors_set.add(candidate)
+    distractors_set.discard(k_answer)
+    distractors = sorted(distractors_set)[:4]
+
+    options = [str(k_answer)] + [str(d) for d in distractors]
+
+    equation_str = f"x\u00b2 + 2kx + (k + {c_val}) = 0"
+
+    question = (
+        f"Per quale valore di k l'equazione {equation_str} "
+        f"non ha soluzioni reali?"
+    )
+
+    disc_at_k = k_answer * k_answer - k_answer - c_val
+    explanation = (
+        f"Il discriminante dell'equazione e' \u0394 = (2k)\u00b2 - 4(k + {c_val}) = "
+        f"4k\u00b2 - 4k - {4 * c_val} = 4(k\u00b2 - k - {c_val}). "
+        f"L'equazione non ha soluzioni reali quando \u0394 < 0, cioe' "
+        f"k\u00b2 - k - {c_val} < 0. Risolvendo: k \u2208 {interval_desc}. "
+        f"Per k = {k_answer}: k\u00b2 - k - {c_val} = {disc_at_k} < 0. \u2714"
+    )
+
+    tip = (
+        "Per un'equazione ax\u00b2 + bx + c = 0 parametrica, "
+        "studia il segno del discriminante \u0394 = b\u00b2 - 4ac come disequazione "
+        "nel parametro. Se \u0394 < 0, l'equazione non ha soluzioni reali."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+def _which_param_quadratic_one_solution() -> dict:
+    """Per quale valore di k l'equazione quadratica ha esattamente una soluzione reale?"""
+    # Structure: x^2 - 2kx + c = 0 where c is a perfect square
+    # Discriminant: 4k^2 - 4c = 0 => k^2 = c => k = +/- sqrt(c)
+    c_choices = [1, 4, 9, 16, 25]
+    c_val = random.choice(c_choices)
+    k_positive = int(math.isqrt(c_val))
+    # Pick one of the two correct values
+    k_answer = random.choice([k_positive, -k_positive])
+
+    # Distractors: the other root is tempting but we pick only one as correct
+    distractors_set = set()
+    # Add wrong values
+    for candidate in [k_answer + 1, k_answer - 1, -k_answer + 1, -k_answer - 1,
+                      0, k_answer + 2, k_answer - 2, c_val]:
+        if candidate != k_answer:
+            distractors_set.add(candidate)
+    distractors = sorted(distractors_set, key=lambda x: abs(x))[:4]
+
+    options = [str(k_answer)] + [str(d) for d in distractors]
+
+    equation_str = f"x\u00b2 - 2kx + {c_val} = 0"
+
+    question = (
+        f"Per quale valore di k l'equazione {equation_str} "
+        f"ha esattamente una soluzione reale?"
+    )
+
+    explanation = (
+        f"Il discriminante e' \u0394 = (-2k)\u00b2 - 4\u00b7{c_val} = 4k\u00b2 - {4 * c_val}. "
+        f"L'equazione ha esattamente una soluzione quando \u0394 = 0, cioe' "
+        f"4k\u00b2 = {4 * c_val}, k\u00b2 = {c_val}, k = \u00b1{k_positive}. "
+        f"Il valore k = {k_answer} e' corretto."
+    )
+
+    tip = (
+        "Un'equazione di secondo grado ha esattamente una soluzione reale (radice doppia) "
+        "quando il discriminante e' nullo: \u0394 = b\u00b2 - 4ac = 0. "
+        "Risolvere \u0394 = 0 rispetto al parametro da' i valori cercati."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+# ================================================================
+#  PARAMETRIC EQUATION ANALYSIS - Level 3
+# ================================================================
+
+def _which_param_quadratic_positive_roots() -> dict:
+    """Per quale valore di k l'equazione ha due radici reali positive?"""
+    # Structure: x^2 - sx + p = 0 where s = sum of roots, p = product
+    # Conditions for two positive roots: delta >= 0, sum > 0, product > 0
+    # Use: x^2 - (k + a)x + b*k = 0 so sum = k + a, product = b*k
+    # Need: k + a > 0, b*k > 0, delta = (k+a)^2 - 4bk >= 0
+    # Pick b > 0 so product > 0 requires k > 0
+    b_val = random.choice([1, 2, 3])
+    a_val = random.choice([1, 2, 3])
+
+    # sum = k + a_val > 0 => k > -a_val (auto-satisfied if k > 0)
+    # product = b_val * k > 0 => k > 0
+    # delta = (k + a_val)^2 - 4*b_val*k >= 0
+    # = k^2 + 2*a_val*k + a_val^2 - 4*b_val*k
+    # = k^2 + (2*a_val - 4*b_val)*k + a_val^2
+    # This is a quadratic in k that's >= 0 outside its roots (if they exist)
+
+    # For simplicity, pick k values that clearly satisfy all conditions
+    # and verify computationally
+    valid_ks = []
+    for k_candidate in range(1, 15):
+        s = k_candidate + a_val
+        p = b_val * k_candidate
+        delta = s * s - 4 * p
+        if delta >= 0 and s > 0 and p > 0:
+            valid_ks.append(k_candidate)
+
+    if len(valid_ks) < 1:
+        # Fallback to safe values
+        a_val, b_val = 2, 1
+        valid_ks = [k for k in range(1, 15)
+                    if (k + 2) ** 2 - 4 * k >= 0 and k > 0]
+
+    k_answer = random.choice(valid_ks[:5])  # pick from smaller values
+
+    # Distractors: negative values (violate product > 0), zero, or values with delta < 0
+    distractors_set = set()
+    # Negative k violates product > 0
+    for candidate in [-1, -2, -k_answer, 0]:
+        distractors_set.add(candidate)
+    # Find k with delta < 0 if possible
+    for k_try in range(1, 20):
+        s = k_try + a_val
+        p = b_val * k_try
+        delta = s * s - 4 * p
+        if delta < 0:
+            distractors_set.add(k_try)
+            break
+    distractors_set.discard(k_answer)
+    distractors = sorted(distractors_set)[:4]
+    # Pad if needed
+    extra = -3
+    while len(distractors) < 4:
+        if extra != k_answer and extra not in distractors:
+            distractors.append(extra)
+        extra -= 1
+
+    options = [str(k_answer)] + [str(d) for d in distractors[:4]]
+
+    # Format equation
+    sum_str_parts = []
+    if a_val == 0:
+        sum_str_parts.append("k")
+    else:
+        sum_str_parts.append(f"(k + {a_val})")
+    prod_str = f"{b_val}k" if b_val != 1 else "k"
+
+    equation_str = f"x\u00b2 - {sum_str_parts[0]}x + {prod_str} = 0"
+
+    s_val = k_answer + a_val
+    p_val = b_val * k_answer
+    delta_val = s_val * s_val - 4 * p_val
+
+    question = (
+        f"Per quale valore di k l'equazione {equation_str} "
+        f"ha due radici reali positive?"
+    )
+
+    explanation = (
+        f"Per avere due radici reali positive servono tre condizioni (Vieta): "
+        f"\u0394 \u2265 0, somma > 0, prodotto > 0. "
+        f"Somma = k + {a_val}, prodotto = {prod_str}. "
+        f"Per k = {k_answer}: somma = {s_val} > 0, prodotto = {p_val} > 0, "
+        f"\u0394 = {s_val}\u00b2 - 4\u00b7{p_val} = {delta_val} \u2265 0. \u2714"
+    )
+
+    tip = (
+        "Per verificare che un'equazione x\u00b2 - sx + p = 0 abbia due radici reali positive, "
+        "usa le relazioni di Vieta: somma delle radici = s > 0, prodotto = p > 0, "
+        "e discriminante \u0394 = s\u00b2 - 4p \u2265 0."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+def _which_param_system_inconsistent() -> dict:
+    """Per quale valore di a il sistema lineare 2x2 non ha soluzioni?"""
+    # System: { a1*x + b1*y = c1 ; a2*x + b2*y = c2 }
+    # Inconsistent when det = 0 AND not proportional constants
+    # Structure: { a*x + b1*y = c1 ; d*x + e*y = f }
+    # where det = a*e - d*b1 = 0 at a = a_answer, but c1*e != f*b1
+
+    # Pick b1, e such that b1*d/e gives integer a_answer
+    # Simpler: { a*x + b_val*y = c1 ; k*a_answer*x + k*b_val*y = c2 }
+    # det = a*k*b_val - k*a_answer*b_val = k*b_val*(a - a_answer)
+    # det = 0 when a = a_answer
+    # Inconsistent when c2 != k*c1
+
+    a_answer = random.choice([i for i in range(-5, 6) if i != 0])
+    b_val = random.choice([i for i in range(-4, 5) if i != 0])
+    c1 = random.choice([i for i in range(-6, 7) if i != 0])
+    k = random.choice([2, 3, -2, -3])
+    # c2 must differ from k*c1
+    c2_wrong = k * c1
+    c2 = c2_wrong + random.choice([i for i in range(-3, 4) if i != 0])
+
+    # Second row coefficients
+    a2_coeff = k * a_answer
+    b2_coeff = k * b_val
+
+    # Format system
+    def _fmt_eq_param(a_str, b, c):
+        parts = []
+        parts.append(f"{a_str}x")
+        if b == 1:
+            parts.append("+ y")
+        elif b == -1:
+            parts.append("- y")
+        elif b > 0:
+            parts.append(f"+ {b}y")
+        elif b < 0:
+            parts.append(f"- {-b}y")
+        return " ".join(parts) + f" = {c}"
+
+    eq1 = _fmt_eq_param("a", b_val, c1)
+    eq2_a2 = str(a2_coeff) if a2_coeff != 1 else ""
+    if a2_coeff == -1:
+        eq2_a2 = "-"
+    eq2 = _fmt_eq_param(str(a2_coeff), b2_coeff, c2)
+    system_str = "{ " + eq1 + " ; " + eq2 + " }"
+
+    # Distractors
+    distractors_set = set()
+    for candidate in [a_answer + 1, a_answer - 1, -a_answer, 0,
+                      a_answer + 2, a_answer * 2, a_answer - 2,
+                      a_answer + 3, a_answer - 3]:
+        if candidate != a_answer:
+            distractors_set.add(candidate)
+    distractors = sorted(distractors_set, key=lambda x: abs(x - a_answer))[:4]
+    # Pad if somehow still short
+    pad = a_answer + 10
+    while len(distractors) < 4:
+        if pad != a_answer and pad not in distractors:
+            distractors.append(pad)
+        pad += 1
+
+    options = [str(a_answer)] + [str(d) for d in distractors[:4]]
+
+    question = (
+        f"Per quale valore di a il sistema {system_str} non ha soluzioni?"
+    )
+
+    det_general = f"a\u00b7{b2_coeff} - {a2_coeff}\u00b7{b_val}"
+    explanation = (
+        f"Il sistema non ha soluzioni quando il determinante dei coefficienti e' zero "
+        f"ma il sistema non e' proporzionale. "
+        f"det = {det_general} = {b2_coeff}a - {a2_coeff * b_val}. "
+        f"Ponendo det = 0: {b2_coeff}a = {a2_coeff * b_val}, a = {a_answer}. "
+        f"Per a = {a_answer} le equazioni hanno coefficienti proporzionali "
+        f"ma termini noti diversi ({c1}\u00b7{k} = {k * c1} \u2260 {c2}), "
+        f"quindi il sistema e' impossibile."
+    )
+
+    tip = (
+        "Un sistema lineare 2\u00d72 non ha soluzioni (e' impossibile) quando "
+        "il determinante della matrice dei coefficienti e' zero e le equazioni "
+        "non sono proporzionali. Geometricamente, le due rette sono parallele."
+    )
+
+    return {
+        "question": question,
+        "options": options,
+        "correct_index": 0,
+        "explanation": explanation,
+        "did_you_know": tip,
+    }
+
+
+# ================================================================
 #  Main class
 # ================================================================
 
@@ -842,11 +1309,14 @@ class WhichSatisfies(Exercise):
     """Quale Soddisfa?: identifica quale oggetto matematico soddisfa una proprieta'."""
 
     _TEMPLATE_MAP = {
-        1: [_which_log_between, _which_is_even, _which_fraction_largest],
+        1: [_which_log_between, _which_is_even, _which_fraction_largest,
+            _which_param_linear_impossible, _which_param_linear_infinite],
         2: [_which_equation_has_solution, _which_not_injective,
-            _which_inequality_has_interval, _which_expression_equals],
+            _which_inequality_has_interval, _which_expression_equals,
+            _which_param_quadratic_no_real, _which_param_quadratic_one_solution],
         3: [_which_system_consistent, _which_parabola_passes_through,
-            _which_always_positive],
+            _which_always_positive,
+            _which_param_quadratic_positive_roots, _which_param_system_inconsistent],
     }
 
     def generate(self, difficulty: int) -> dict:

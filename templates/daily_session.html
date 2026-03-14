@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Sessione di Oggi — TOLC-B Math Mindset Trainer{% endblock %}
+
+{% block content %}
+<section class="exercise-header">
+    <a href="/" class="back-link">&larr; Dashboard</a>
+    <h1>📅 Sessione di Oggi</h1>
+</section>
+
+<div id="session-progress" class="session-progress hidden">
+    <div class="session-progress-bar">
+        <div class="session-progress-fill" id="session-progress-fill"></div>
+    </div>
+    <span class="session-progress-text" id="session-progress-text"></span>
+</div>
+
+<div id="session-status" class="exercise-area">
+    <div class="loading">Preparazione sessione...</div>
+</div>
+
+<section id="exercise-area" class="exercise-area hidden">
+</section>
+
+<section id="feedback-area" class="feedback-area hidden">
+</section>
+
+<div id="exercise-actions" class="exercise-actions hidden">
+    <button id="btn-check" class="btn btn-primary" disabled>Verifica risposta</button>
+    <button id="btn-next" class="btn btn-secondary hidden">Prossimo &rarr;</button>
+</div>
+
+<section id="session-report" class="session-report hidden">
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.EXERCISE_TYPES = {
+        {% for key, ex in exercise_types.items() %}
+        "{{ key }}": { "name": "{{ ex.name }}", "icon": "{{ ex.icon }}", "desc": "{{ ex.desc }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/daily_session.js') }}"></script>
+{% endblock %}

@@ -187,6 +187,29 @@ main {
     background: #eef2ff;
 }
 
+/* === Adaptive Difficulty Indicator === */
+.adaptive-indicator {
+    font-size: 0.8rem;
+    color: var(--primary);
+    font-weight: 500;
+    margin-left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: #eef2ff;
+    border-radius: 6px;
+    border: 1px solid var(--primary-light);
+}
+.adaptive-indicator.hidden { display: none; }
+
+/* === Mastery Badge on Dashboard === */
+.mastery-badge-indicator {
+    font-size: 1rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
 /* === Timer Bar === */
 .timer-bar {
     height: 6px;
@@ -1443,3 +1466,64 @@ footer {
     .tt-type-checkboxes { grid-template-columns: 1fr; }
     .tt-setting-options { flex-wrap: wrap; }
 }
+
+/* === Daily Session === */
+
+/* Dashboard badge */
+.daily-badge {
+    margin-bottom: 1.5rem;
+}
+.daily-badge.hidden { display: none; }
+.daily-badge-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #ede9fe, #e0e7ff);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.daily-badge-link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Session progress bar */
+.session-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.session-progress.hidden { display: none; }
+.session-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.session-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.4s ease;
+}
+.session-progress-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-light);
+    min-width: 4rem;
+    text-align: right;
+}
+
+/* Session report */
+.session-report {
+    margin-top: 1rem;
+}
+.session-report.hidden { display: none; }

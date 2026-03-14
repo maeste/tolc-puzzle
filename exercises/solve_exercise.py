@@ -1659,6 +1659,335 @@ def _t2_rational_exponent_general():
 
 
 # ---------------------------------------------------------------------------
+# Radical equations with domain validation (L2 and L3)
+# ---------------------------------------------------------------------------
+
+
+def _t2_solve_radical_simple():
+    """Solve sqrt(ax + b) = c with domain validation."""
+    a = random.randint(1, 3)
+    c = random.randint(2, 5)
+    c_sq = c * c
+    # Pick x_sol so that (c^2 - b) / a is integer and b stays small
+    x_sol = random.randint(1, 10)
+    b = c_sq - a * x_sol  # ensures ax+b = c^2 exactly
+
+    # Format the radicand
+    if a == 1:
+        radicand = f"x + {b}" if b >= 0 else f"x - {abs(b)}"
+    else:
+        radicand = f"{a}x + {b}" if b >= 0 else f"{a}x - {abs(b)}"
+
+    question = f"Risolvi l'equazione √({radicand}) = {c}"
+    correct_str = f"x = {x_sol}"
+
+    distractors = [
+        f"x = {-x_sol}",
+        f"x = {c_sq}",
+        f"x = {c}",
+        "Nessuna soluzione",
+    ]
+
+    explanation = (
+        f"Eleviamo al quadrato entrambi i membri: {radicand} = {c}² = {c_sq}.\n"
+        f"Risolvendo: {a}x = {c_sq} - {f'({b})' if b < 0 else b} = {c_sq - b}, "
+        f"quindi x = {x_sol}.\n"
+        f"Verifica dominio: {a}·{x_sol} + {f'({b})' if b < 0 else b} = {c_sq} ≥ 0 ✓\n"
+        f"Verifica: √({c_sq}) = {c} ✓"
+    )
+    tip = (
+        "Per risolvere equazioni con radicali: eleva al quadrato entrambi i "
+        "membri e poi verifica che la soluzione appartenga al dominio "
+        "(l'argomento del radicale deve essere ≥ 0)."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t2_solve_radical_linear():
+    """Solve sqrt(x + b) = x + d, with extraneous solution check."""
+    # Pick a valid solution x_sol (positive, small)
+    x_sol = random.randint(1, 6)
+    # Pick d so that x_sol + d >= 0 and sqrt value is nice
+    # sqrt(x_sol + b) = x_sol + d  =>  x_sol + b = (x_sol + d)^2
+    # We need x_sol + d > 0 (right side of original equation must be >= 0)
+    d = random.choice([-1, 0, 1, 2])
+    rhs_val = x_sol + d
+    if rhs_val < 0:
+        d = 0
+        rhs_val = x_sol + d
+
+    b = rhs_val ** 2 - x_sol  # so x_sol + b = (x_sol + d)^2
+
+    # After squaring: x + b = (x + d)^2 = x^2 + 2dx + d^2
+    # => x^2 + (2d - 1)x + (d^2 - b) = 0
+    A_coeff = 1
+    B_coeff = 2 * d - 1
+    C_coeff = d * d - b
+    discriminant = B_coeff ** 2 - 4 * A_coeff * C_coeff
+
+    solutions = []
+    if discriminant >= 0:
+        sqrt_disc = math.isqrt(max(0, discriminant)) if discriminant == int(discriminant) else -1
+        if sqrt_disc >= 0 and sqrt_disc * sqrt_disc == discriminant:
+            s1 = (-B_coeff + sqrt_disc) // (2 * A_coeff) if (-B_coeff + sqrt_disc) % (2 * A_coeff) == 0 else None
+            s2 = (-B_coeff - sqrt_disc) // (2 * A_coeff) if (-B_coeff - sqrt_disc) % (2 * A_coeff) == 0 else None
+            for s in [s1, s2]:
+                if s is not None:
+                    solutions.append(s)
+
+    # Validate each solution: x + b >= 0 AND x + d >= 0 AND sqrt(x+b) == x+d
+    valid = []
+    extraneous = []
+    for s in set(solutions):
+        if s + b >= 0 and s + d >= 0 and abs(math.isqrt(s + b) - (s + d)) < 1e-9:
+            val_check = s + b
+            sqrt_val = math.isqrt(val_check)
+            if sqrt_val * sqrt_val == val_check and sqrt_val == s + d:
+                valid.append(s)
+            else:
+                extraneous.append(s)
+        else:
+            extraneous.append(s)
+
+    # Ensure we always have at least x_sol as valid
+    if x_sol not in valid:
+        valid = [x_sol]
+        extraneous = [s for s in solutions if s != x_sol]
+
+    # Format radicand
+    radicand = f"x + {b}" if b >= 0 else f"x - {abs(b)}"
+    rhs = f"x + {d}" if d >= 0 else f"x - {abs(d)}"
+    if d == 0:
+        rhs = "x"
+
+    question = f"Risolvi √({radicand}) = {rhs}. Indica la/le soluzione/i valida/e."
+
+    if len(valid) == 1:
+        correct_str = f"x = {valid[0]}"
+    else:
+        valid_sorted = sorted(valid)
+        correct_str = f"x = {valid_sorted[0]} e x = {valid_sorted[1]}"
+
+    # Build distractors
+    distractors = []
+    if extraneous:
+        distractors.append(f"x = {extraneous[0]}")
+    if len(solutions) >= 2:
+        all_sorted = sorted(set(solutions))
+        distractors.append(f"x = {all_sorted[0]} e x = {all_sorted[1]}")
+    distractors.append("Nessuna soluzione")
+    # Add arithmetic-error distractor
+    distractors.append(f"x = {x_sol + 2}")
+    # Ensure exactly 4
+    extra_vals = [x_sol - 1, x_sol + 3, -x_sol, x_sol * 2]
+    for ev in extra_vals:
+        if len(distractors) >= 4:
+            break
+        candidate = f"x = {ev}"
+        if candidate != correct_str and candidate not in distractors:
+            distractors.append(candidate)
+    distractors = [d for d in distractors if d != correct_str][:4]
+    while len(distractors) < 4:
+        distractors.append(f"x = {x_sol + len(distractors) + 5}")
+
+    explanation = (
+        f"Eleviamo al quadrato: {radicand} = ({rhs})² = x² + {2*d}x + {d*d}.\n"
+        f"Riordinando: x² + {2*d - 1}x + {d*d - b} = 0.\n"
+    )
+    if len(valid) == 1:
+        explanation += (
+            f"Risolvendo e verificando il dominio ({radicand} ≥ 0 e {rhs} ≥ 0), "
+            f"l'unica soluzione valida e' x = {valid[0]}."
+        )
+    else:
+        explanation += (
+            f"Risolvendo e verificando il dominio, le soluzioni valide sono: "
+            + ", ".join(f"x = {v}" for v in sorted(valid)) + "."
+        )
+    if extraneous:
+        explanation += (
+            f"\nx = {extraneous[0]} e' una soluzione estranea "
+            f"(non soddisfa il dominio)."
+        )
+
+    tip = (
+        "Quando risolvi equazioni irrazionali, dopo aver elevato al quadrato "
+        "devi SEMPRE verificare le soluzioni nell'equazione originale. "
+        "L'elevamento al quadrato puo' introdurre soluzioni estranee."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t3_solve_radical_two_radicals():
+    """Solve sqrt(x+b) + sqrt(x+d) = e with two radicals."""
+    # Pick x_sol and b, d so that sqrt values are integers
+    # sqrt(x_sol + b) = p, sqrt(x_sol + d) = q, e = p + q
+    p = random.randint(1, 5)
+    q = random.randint(1, 5)
+    while p == q:
+        q = random.randint(1, 5)
+    e = p + q
+    x_sol = random.randint(0, 8)
+    b = p * p - x_sol
+    d = q * q - x_sol
+
+    # Verify
+    assert x_sol + b == p * p
+    assert x_sol + d == q * q
+
+    # Format radicands
+    rad1 = f"x + {b}" if b >= 0 else f"x - {abs(b)}"
+    rad2 = f"x + {d}" if d >= 0 else f"x - {abs(d)}"
+
+    question = f"Risolvi √({rad1}) + √({rad2}) = {e}"
+    correct_str = f"x = {x_sol}"
+
+    # Distractors: common mistakes
+    wrong1 = e * e  # squaring the sum directly
+    wrong2 = x_sol + p  # confusing p with answer shift
+    wrong3 = -x_sol if x_sol != 0 else x_sol + 3  # sign error
+    wrong4_candidates = [x_sol + 1, x_sol - 1, x_sol + 2, x_sol * 2, e]
+    wrong4 = wrong4_candidates[0]
+    for wc in wrong4_candidates:
+        if wc not in (x_sol, wrong1, wrong2, wrong3):
+            wrong4 = wc
+            break
+
+    distractors_set = set()
+    for val in [wrong1, wrong2, wrong3, wrong4]:
+        candidate = f"x = {val}"
+        if candidate != correct_str:
+            distractors_set.add(candidate)
+    distractors_set.add("Nessuna soluzione")
+    distractors = list(distractors_set)[:4]
+    while len(distractors) < 4:
+        filler = f"x = {x_sol + len(distractors) + 10}"
+        if filler not in distractors and filler != correct_str:
+            distractors.append(filler)
+
+    explanation = (
+        f"Isoliamo un radicale: √({rad1}) = {e} - √({rad2}).\n"
+        f"Eleviamo al quadrato: {rad1} = {e}² - 2·{e}·√({rad2}) + ({rad2}).\n"
+        f"Semplificando e isolando il radicale residuo, eleviamo ancora al quadrato.\n"
+        f"La soluzione e' x = {x_sol}.\n"
+        f"Verifica: √({x_sol + b}) + √({x_sol + d}) = {p} + {q} = {e} ✓"
+    )
+    tip = (
+        "Con due radicali, isola un radicale da un lato, eleva al quadrato, "
+        "poi isola il radicale restante ed eleva di nuovo al quadrato. "
+        "Verifica sempre la soluzione nell'equazione originale."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+def _t3_solve_radical_extraneous():
+    """Equation where squaring introduces an extraneous solution."""
+    # Equation: sqrt(a - x) = x - c
+    # Domain: a - x >= 0  =>  x <= a
+    # AND: x - c >= 0  =>  x >= c
+    # After squaring: a - x = x^2 - 2cx + c^2
+    # => x^2 + (1 - 2c)x + (c^2 - a) = 0
+
+    # Pick parameters to get one valid and one extraneous solution
+    # Pick c small, a so discriminant gives integer roots
+    c = random.randint(1, 3)
+    # We want two integer solutions from x^2 + (1-2c)x + (c^2-a) = 0
+    # Pick two roots r1, r2: r1 + r2 = 2c - 1, r1 * r2 = c^2 - a
+    # Pick r1 (valid) and r2 (extraneous)
+    # Valid: c <= r1 <= a, and sqrt(a-r1) = r1 - c
+    r1 = c + random.randint(0, 3)  # valid: r1 >= c
+    # r1 + r2 = 2c - 1 => r2 = 2c - 1 - r1
+    r2 = 2 * c - 1 - r1
+    # a = c^2 - r1 * r2
+    a = c * c - r1 * r2
+
+    # Verify r1 is valid
+    valid_r1 = (a - r1 >= 0) and (r1 - c >= 0) and (a - r1 == (r1 - c) ** 2)
+    # Verify r2 is extraneous
+    if r2 == r1:
+        # Degenerate, retry with fixed values
+        c, r1, r2, a = 2, 3, -2, 5
+        # sqrt(5 - x) = x - 2: at x=3, sqrt(2)=1 ✓ (wait, 3-2=1, 5-3=2, sqrt(2)!=1)
+        # Let's use a known working example
+        # sqrt(a - x) = x - c with c=1, r1=3: sqrt(a-3)=2, a-3=4, a=7
+        # r2 = 2*1-1-3 = -2, c^2 - r1*r2 = 1-3*(-2)=7 ✓
+        # Check r2=-2: a-r2=9, sqrt(9)=3, r2-c=-3, 3 != -3 => extraneous ✓
+        c, r1, a = 1, 3, 7
+        r2 = 2 * c - 1 - r1  # = -2
+
+    if not valid_r1:
+        # Fallback to known good example
+        c, r1, a = 1, 3, 7
+        r2 = -2
+
+    # Double-check
+    assert a - r1 >= 0 and r1 - c >= 0
+    assert (r1 - c) ** 2 == a - r1
+
+    # Check r2 is extraneous
+    r2_extraneous = True
+    if a - r2 >= 0 and r2 - c >= 0:
+        if (r2 - c) ** 2 == a - r2:
+            r2_extraneous = False
+
+    if not r2_extraneous:
+        # Both valid — pick different params where one is extraneous
+        c, r1, a = 1, 3, 7
+        r2 = -2
+
+    # Format equation
+    radicand = f"{a} - x" if a > 0 else f"-x - {abs(a)}"
+    rhs = f"x - {c}" if c > 0 else f"x + {abs(c)}"
+
+    if r2_extraneous:
+        num_solutions = 1
+        correct_str = f"1 soluzione: x = {r1}"
+        distractors = [
+            f"2 soluzioni: x = {r1} e x = {r2}",
+            f"1 soluzione: x = {r2}",
+            "Nessuna soluzione",
+            f"2 soluzioni: x = {r1} e x = {r1 + 1}",
+        ]
+    else:
+        num_solutions = 2
+        sorted_sols = sorted([r1, r2])
+        correct_str = f"2 soluzioni: x = {sorted_sols[0]} e x = {sorted_sols[1]}"
+        distractors = [
+            f"1 soluzione: x = {r1}",
+            f"1 soluzione: x = {r2}",
+            "Nessuna soluzione",
+            f"2 soluzioni: x = {r1} e x = {r1 + 2}",
+        ]
+
+    question = (
+        f"Risolvi √({radicand}) = {rhs}. Quante soluzioni valide ha?"
+    )
+
+    explanation = (
+        f"Eleviamo al quadrato: {radicand} = ({rhs})².\n"
+        f"Otteniamo x² + {1 - 2*c}x + {c*c - a} = 0.\n"
+        f"Le soluzioni dell'equazione quadratica sono x = {r1} e x = {r2}.\n"
+    )
+    if r2_extraneous:
+        explanation += (
+            f"Verifica x = {r1}: √({a} - {r1}) = √({a - r1}) = {r1 - c}, "
+            f"e {r1} - {c} = {r1 - c} ✓\n"
+            f"Verifica x = {r2}: dominio richiede x - {c} ≥ 0, "
+            f"ma {r2} - {c} = {r2 - c} < 0 ✗ (soluzione estranea).\n"
+            f"Quindi c'e' una sola soluzione: x = {r1}."
+        )
+    else:
+        explanation += "Entrambe le soluzioni soddisfano il dominio."
+
+    tip = (
+        "Attenzione alle soluzioni estranee! Quando elevi al quadrato "
+        "un'equazione irrazionale, puoi introdurre soluzioni che non "
+        "soddisfano l'equazione originale. Verifica SEMPRE ogni soluzione."
+    )
+    return question, correct_str, distractors, explanation, tip
+
+
+# ---------------------------------------------------------------------------
 # Template registries
 # ---------------------------------------------------------------------------
 
@@ -1721,6 +2050,13 @@ _STRING_TEMPLATES_L1 = [
 # Some L2 templates return 5-tuple (string) depending on variant
 _STRING_TEMPLATES_L2 = [
     _t2_trig_convert_deg_rad,
+    _t2_solve_radical_simple,
+    _t2_solve_radical_linear,
+]
+
+_STRING_TEMPLATES_L3 = [
+    _t3_solve_radical_two_radicals,
+    _t3_solve_radical_extraneous,
 ]
 
 
@@ -1732,6 +2068,7 @@ class SolveExercise(Exercise):
     TEMPLATES_L2_NUMERIC = _NUMERIC_TEMPLATES_L2
     TEMPLATES_L2_STRING = _STRING_TEMPLATES_L2
     TEMPLATES_L3 = _NUMERIC_TEMPLATES_L3
+    TEMPLATES_L3_STRING = _STRING_TEMPLATES_L3
 
     @staticmethod
     def _build_from_result(result_tuple, difficulty):
@@ -1771,7 +2108,10 @@ class SolveExercise(Exercise):
                 + list(self.TEMPLATES_L2_STRING)
             )
         else:
-            all_templates = list(self.TEMPLATES_L3)
+            all_templates = (
+                list(self.TEMPLATES_L3)
+                + list(self.TEMPLATES_L3_STRING)
+            )
 
         template_fn = random.choice(all_templates)
         result_tuple = template_fn()

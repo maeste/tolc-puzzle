@@ -23,6 +23,12 @@
     </div>
 </section>
 
+<section id="srs-daily-badge" class="daily-badge hidden">
+    <a href="/daily-session" class="daily-badge-link">
+        <span id="daily-badge-text"></span>
+    </a>
+</section>
+
 <section class="exercises-grid">
     {% for key, ex in exercise_types.items() %}
     <a href="/exercise/{{ key }}" class="exercise-card" data-type="{{ key }}">
@@ -74,6 +80,59 @@
         "{{ key }}": { "name": "{{ ex.name }}", "icon": "{{ ex.icon }}", "desc": "{{ ex.desc }}" }{% if not loop.last %},{% endif %}
         {% endfor %}
     };
+
+    // SRS daily badge
+    (function() {
+        if (!window.SRSTracker || !window.SRSScheduler) return;
+        SRSTracker.init();
+        if (window.SRSReconsolidation) SRSReconsolidation.init();
+        var summary = SRSScheduler.getSummary();
+        var badge = document.getElementById("srs-daily-badge");
+        var badgeText = document.getElementById("daily-badge-text");
+        if (!badge || !badgeText) return;
+
+        function fmtMin(m) {
+            if (m === null || m === undefined) return "";
+            if (m < 60) return Math.round(m) + " minuti";
+            if (m < 1440) return Math.round(m / 60) + " ore";
+            return Math.round(m / 1440) + " giorni";
+        }
+
+        if (summary.overdueCount > 0) {
+            badgeText.textContent = "\uD83D\uDCC5 Hai " + summary.overdueCount + " esercizi da ripassare oggi";
+            badge.classList.remove("hidden");
+        } else if (summary.nextDueIn !== null) {
+            badgeText.textContent = "\u2705 Tutto ripassato! Prossima sessione tra " + fmtMin(summary.nextDueIn);
+            badge.classList.remove("hidden");
+        }
+    })();
+
+    // Mastery badges from SRS Adaptive
+    (function() {
+        if (!window.SRSAdaptive || !window.SRSTracker) return;
+        // SRSTracker already initialized above
+        var MASTERY_BADGES = {
+            "beginner": "\uD83C\uDF31",
+            "intermediate": "\uD83D\uDCD7",
+            "advanced": "\uD83D\uDCD8",
+            "mastered": "\uD83C\uDFC6"
+        };
+        var levels = SRSAdaptive.getAllMasteryLevels();
+        document.querySelectorAll(".exercise-card").forEach(function(card) {
+            var type = card.dataset.type;
+            if (!type || !levels[type]) return;
+            var level = levels[type];
+            var badge = MASTERY_BADGES[level] || "";
+            if (!badge) return;
+            var statsArea = card.querySelector(".card-stats");
+            if (!statsArea) return;
+            var span = document.createElement("span");
+            span.className = "mastery-badge-indicator";
+            span.textContent = badge;
+            span.title = level;
+            statsArea.appendChild(span);
+        });
+    })();
 
     // Info banner dismiss with localStorage persistence
     (function() {

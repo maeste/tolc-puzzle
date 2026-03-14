@@ -30,6 +30,24 @@ const Storage = {
             if (wrongDetail) this.recordWrong(type, wrongDetail);
         }
         this.saveProgress(progress);
+
+        /* SRS Tracker integration */
+        if (window.SRSTracker) {
+            var diff = window._currentDifficulty || 2;
+            var timeMs = window._currentTimeMs || 0;
+            SRSTracker.recordAnswer(type, diff, correct, timeMs);
+        }
+
+        /* SRS Reconsolidation integration */
+        if (window.SRSReconsolidation) {
+            var reconDiff = window._currentDifficulty || 2;
+            if (correct) {
+                SRSReconsolidation.onCorrectAnswer(type, reconDiff);
+            } else {
+                SRSReconsolidation.onWrongAnswer(type, reconDiff);
+            }
+        }
+
         return p;
     },
     /* --- Wrong answers log --- */

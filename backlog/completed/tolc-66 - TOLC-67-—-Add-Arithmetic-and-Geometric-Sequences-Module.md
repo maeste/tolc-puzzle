@@ -1,9 +1,10 @@
 ---
 id: TOLC-66
 title: TOLC-67 — Add Arithmetic and Geometric Sequences Module
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-14 00:15'
+updated_date: '2026-03-14 22:44'
 labels:
   - gap-v5
   - arithmetic
@@ -42,19 +43,37 @@ This gap was identified in Assessment v5 (§11.9) from question E5 (Test Ingegne
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Add 7 templates (2 L1, 3 L2, 2 L3) for arithmetic and geometric sequences in number_sense.py
-- [ ] #2 L1: nth term (arithmetic + geometric), L2: sum of n terms + find ratio/difference, L3: infinite series convergence + mixed identification
-- [ ] #3 Use realistic Italian contexts: risparmio, crescita popolazione, interesse composto, palla che rimbalza
-- [ ] #4 Distractors based on common errors: off-by-one in exponent, wrong sum formula (arithmetic vs geometric), sign errors in ratio
-- [ ] #5 5-option multiple choice, all text in Italian
-- [ ] #6 Tests: ≥30 automated tests covering all templates, edge cases (r=1, r=-1, d=0, large n), and formula correctness
-- [ ] #7 Update claudedocs/tolc-b-coverage-analysis.md: add 'Successioni aritmetiche e geometriche' row in §2.1, mark as IMPLEMENTATO, update §11.9
+- [x] #1 Add 7 templates (2 L1, 3 L2, 2 L3) for arithmetic and geometric sequences in number_sense.py
+- [x] #2 L1: nth term (arithmetic + geometric), L2: sum of n terms + find ratio/difference, L3: infinite series convergence + mixed identification
+- [x] #3 Use realistic Italian contexts: risparmio, crescita popolazione, interesse composto, palla che rimbalza
+- [x] #4 Distractors based on common errors: off-by-one in exponent, wrong sum formula (arithmetic vs geometric), sign errors in ratio
+- [x] #5 5-option multiple choice, all text in Italian
+- [x] #6 Tests: ≥30 automated tests covering all templates, edge cases (r=1, r=-1, d=0, large n), and formula correctness
+- [x] #7 Update claudedocs/tolc-b-coverage-analysis.md: add 'Successioni aritmetiche e geometriche' row in §2.1, mark as IMPLEMENTATO, update §11.9
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## TOLC-66: Arithmetic and Geometric Sequences — Complete
+
+### Changes
+- **MODIFIED** `exercises/number_sense.py`: Added 7 sequence templates:
+  - L1: _sequence_arithmetic_nth_term, _sequence_geometric_nth_term
+  - L2: _sequence_arithmetic_sum, _sequence_geometric_sum, _sequence_find_ratio_or_difference
+  - L3: _sequence_geometric_convergence, _sequence_mixed_problem
+- **NEW** `tests/test_sequences.py`: 38 tests
+
+### Metrics
+- Tests: 38 new
+- Full suite: 2411 passed
+- Gap §11.9 (sequences) resolved
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Test automatizzati passano (pytest)
-- [ ] #2 Coverage doc aggiornato (claudedocs/tolc-b-coverage-analysis.md)
-- [ ] #3 Esercizi generati correttamente con distrattori sensati
-- [ ] #4 Integrato nella simulazione esame se applicabile
+- [x] #1 Test automatizzati passano (pytest)
+- [x] #2 Coverage doc aggiornato (claudedocs/tolc-b-coverage-analysis.md)
+- [x] #3 Esercizi generati correttamente con distrattori sensati
+- [x] #4 Integrato nella simulazione esame se applicabile
 <!-- DOD:END -->
