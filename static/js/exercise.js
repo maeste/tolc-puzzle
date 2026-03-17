@@ -161,7 +161,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (ex.graph_data) {
-            html += `<div class="graph-container">${ex.graph_data}</div>`;
+            html += `<button class="hint-toggle" onclick="this.nextElementSibling.style.display='block'; this.style.display='none';">💡 Aiuto</button>`;
+            html += `<div class="graph-container" style="display:none">${ex.graph_data}</div>`;
         }
 
         exerciseArea.innerHTML = html;
@@ -240,7 +241,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     givenAnswer: givenLabel,
                     correctAnswer: correctLabel,
                     explanation: result.explanation || "",
-                    didYouKnow: result.did_you_know || ""
+                    didYouKnow: result.did_you_know || "",
+                    difficulty: window._currentDifficulty || 2
                 });
             }
         } catch (err) {
